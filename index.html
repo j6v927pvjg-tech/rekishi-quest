@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>れきしクエスト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* ===== 色やサイズの基本設定 ===== */
+:root{
+  --bg:#eef3dc; --card:#ffffff; --ink:#3b3b3b; --sub:#7a7a7a;
+  --green:#5cbf2a; --green-d:#46a01b; --red:#ff5a5a; --red-d:#d93e3e;
+  --blue:#3fa9f5; --gold:#ffc83d; --line:#e2e6d0; --cream:#fffbea;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  font-weight:700; -webkit-user-select:none; user-select:none;
+  min-height:100vh; overflow-x:hidden;
+}
+button{font-family:inherit;font-weight:800;cursor:pointer;border:none}
+ruby rt{font-size:.5em;font-weight:700;color:#888}
+.screen{display:none;max-width:760px;margin:0 auto;padding:16px 16px 120px}
+.screen.active{display:block}
+
+/* ===== ぷにっと押せるボタン ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 22px;border-radius:18px;font-size:20px;color:#fff;
+  background:var(--green);box-shadow:0 5px 0 var(--green-d);
+  transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--green-d)}
+.btn.blue{background:var(--blue);box-shadow:0 5px 0 #2a86c9}
+.btn.gray{background:#fff;color:var(--ink);box-shadow:0 5px 0 #cfd4bd;border:2px solid #dfe3cf}
+.btn.red{background:var(--red);box-shadow:0 5px 0 var(--red-d)}
+.btn.gold{background:var(--gold);color:#6b4b00;box-shadow:0 5px 0 #d9a21a}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.wide{width:100%}
+
+/* ===== 上のバー（スコア表示） ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.logo{font-size:24px;font-weight:800;color:var(--green-d);letter-spacing:1px}
+.stats{display:flex;gap:8px;align-items:center}
+.stat{background:#fff;border-radius:14px;padding:6px 12px;font-size:17px;box-shadow:0 3px 0 #d8ddc4}
+.icon-btn{background:#fff;border-radius:14px;width:42px;height:42px;font-size:20px;box-shadow:0 3px 0 #d8ddc4}
+
+/* ===== 先生（もち先生） ===== */
+.teacher-row{display:flex;align-items:flex-end;gap:10px;margin:8px 0 18px}
+.teacher{flex:0 0 auto;width:130px}
+.teacher.sm{width:96px}
+.mochi{width:100%;height:auto;display:block;transform-origin:50% 95%;animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.035,.965)}}
+.teacher.t-jump .mochi{animation:jump .7s ease}
+@keyframes jump{0%{transform:none}18%{transform:scale(1.12,.84)}50%{transform:translateY(-30px) scale(.94,1.08)}78%{transform:scale(1.1,.9)}100%{transform:none}}
+.teacher.t-shake .mochi{animation:shake .5s ease}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px) rotate(-4deg)}40%{transform:translateX(8px) rotate(4deg)}60%{transform:translateX(-6px)}80%{transform:translateX(5px)}}
+.mochi .eyes-happy,.mochi .eyes-sad,.mochi .tear{display:none}
+.t-happy .mochi .eyes-normal,.t-sad .mochi .eyes-normal{display:none}
+.t-happy .mochi .eyes-happy{display:inline}
+.t-sad .mochi .eyes-sad,.t-sad .mochi .tear{display:inline}
+.mochi .blush{opacity:.35;transition:opacity .3s}
+.t-happy .mochi .blush{opacity:.9}
+
+.bubble{
+  position:relative;background:#fff;border-radius:20px;padding:14px 16px;
+  font-size:19px;line-height:1.6;box-shadow:0 4px 0 #d8ddc4;flex:1;
+}
+.bubble::before{
+  content:"";position:absolute;left:-12px;bottom:26px;border:8px solid transparent;
+  border-right:14px solid #fff;
+}
+.tname{font-size:13px;color:var(--green-d);margin-bottom:2px}
+
+/* ===== 章とステージの道 ===== */
+.chapter{background:#fff;border-radius:24px;margin:0 0 22px;overflow:hidden;box-shadow:0 5px 0 #d8ddc4}
+.ch-head{background:var(--c);color:#fff;padding:14px 18px}
+.ch-num{font-size:15px;opacity:.95}
+.ch-title{font-size:23px;font-weight:800}
+.ch-era{font-size:14px;opacity:.95}
+.path{padding:22px 0 10px;display:flex;flex-direction:column;align-items:center}
+.node-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:34px}
+.node{
+  width:84px;height:84px;border-radius:50%;font-size:34px;color:#fff;
+  background:var(--c);box-shadow:0 7px 0 rgba(0,0,0,.18);position:relative;
+}
+.node:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.node.locked{background:#d9dccb;color:#9aa08a;box-shadow:0 7px 0 #bfc3ae}
+.node.boss{width:100px;height:100px;font-size:42px}
+.node.next{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.node-label{font-size:14px;margin-top:8px;color:var(--ink);text-align:center;max-width:140px}
+.node-stars{font-size:15px;letter-spacing:1px;height:18px;color:var(--gold);text-shadow:0 1px 0 #c79500}
+.start-tag{
+  position:absolute;top:-34px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:#fff;color:var(--c);border:2px solid var(--c);border-radius:12px;padding:2px 10px;font-size:14px;
+  animation:bob 1s ease-in-out infinite alternate;
+}
+@keyframes bob{to{transform:translate(-50%,-5px)}}
+
+/* ===== ポップアップ ===== */
+.modal{position:fixed;inset:0;background:rgba(40,50,20,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal.show{display:flex}
+.sheet{
+  background:var(--cream);width:100%;max-width:760px;border-radius:28px 28px 0 0;padding:20px 18px 32px;
+  animation:up .25s ease;max-height:92vh;overflow:auto;
+}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet h2{margin:0 0 4px;font-size:24px}
+.sheet .subt{color:var(--sub);font-size:15px;margin-bottom:12px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.mode{
+  background:#fff;border-radius:20px;padding:16px 10px;text-align:center;font-size:20px;color:var(--ink);
+  border:3px solid #e6e9d6;box-shadow:0 5px 0 #d8ddc4;
+}
+.mode:active{transform:translateY(4px);box-shadow:0 1px 0 #d8ddc4}
+.mode .mi{font-size:44px;display:block}
+.mode .ms{color:var(--gold);font-size:18px;text-shadow:0 1px 0 #c79500}
+.mode .md{font-size:13px;color:var(--sub);font-weight:500;display:block;margin-top:4px}
+.mode:disabled{opacity:.4}
+.setting{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:16px;padding:14px 16px;margin:10px 0;font-size:18px}
+.switch{width:62px;height:34px;border-radius:20px;background:#ccc;position:relative;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:var(--green)}
+.switch.on::after{left:31px}
+
+/* ===== クイズ画面 ===== */
+.quiz-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.quit{background:none;font-size:30px;color:#a9ae98;width:40px}
+.bar{flex:1;height:20px;background:#dfe4cb;border-radius:12px;overflow:hidden}
+.bar>div{height:100%;background:linear-gradient(#7ad94a,var(--green));border-radius:12px;transition:width .4s}
+.hearts{font-size:22px;white-space:nowrap}
+.hearts .lost{filter:grayscale(1);opacity:.35}
+.combo{text-align:center;height:26px;font-size:18px;color:#ff8a00}
+.q-tag{font-size:13px;color:#ff8a00}
+.q-text{font-size:22px;line-height:1.8}
+.read-btn{background:#eef7e6;border-radius:12px;padding:4px 10px;font-size:15px;color:var(--green-d);margin-top:6px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.choice{
+  background:#fff;border:3px solid #e1e5d0;border-radius:20px;padding:18px 10px;font-size:21px;color:var(--ink);
+  box-shadow:0 5px 0 #d4d9c0;min-height:84px;line-height:1.35;
+}
+.choice:active{transform:translateY(4px);box-shadow:0 1px 0 #d4d9c0}
+.choice.ok{background:#d9f7c8;border-color:var(--green);box-shadow:0 5px 0 var(--green-d)}
+.choice.ng{background:#ffe0e0;border-color:var(--red);box-shadow:0 5px 0 var(--red-d)}
+.hint-line{font-size:15px;color:var(--sub);margin:4px 2px 8px}
+.boxes{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.boxes span{width:30px;height:30px;border:2px dashed #c5cbb0;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--green-d);background:#fff}
+.ans-input{
+  width:100%;font-size:28px;padding:16px;border-radius:18px;border:3px solid #dfe3cf;font-family:inherit;font-weight:700;
+  -webkit-user-select:text;user-select:text;outline:none;background:#fff;
+}
+.ans-input:focus{border-color:var(--blue)}
+.row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.row .btn{flex:1}
+.mic{
+  width:130px;height:130px;border-radius:50%;font-size:56px;background:var(--blue);color:#fff;
+  box-shadow:0 8px 0 #2a86c9;display:block;margin:10px auto;
+}
+.mic.listening{background:var(--red);box-shadow:0 8px 0 var(--red-d);animation:pulse .9s infinite}
+.heard{text-align:center;font-size:24px;min-height:40px;margin:6px 0}
+.small-note{text-align:center;color:var(--sub);font-size:15px}
+.canvas-wrap{background:#fff;border-radius:20px;border:3px solid #dfe3cf;overflow:hidden;touch-action:none}
+canvas.pad{display:block;width:100%;height:230px;touch-action:none}
+
+/* 正解・不正解のおしらせ */
+.feedback{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;padding:18px 18px 26px;transform:translateY(110%);transition:transform .25s ease;
+}
+.feedback.show{transform:none}
+.feedback .inner{max-width:760px;margin:0 auto}
+.feedback.good{background:#d7f5c2;color:#2f7a0c}
+.feedback.bad{background:#ffdede;color:#b83030}
+.fb-title{font-size:26px;font-weight:800}
+.fb-ans{font-size:20px;margin:4px 0;color:var(--ink)}
+.fb-exp{font-size:16px;color:#555;font-weight:500;line-height:1.6;margin-bottom:12px}
+.xp-pop{position:fixed;font-size:26px;color:#ff9f00;font-weight:800;pointer-events:none;z-index:60;animation:xpup 1s ease forwards;text-shadow:0 2px 0 #fff}
+@keyframes xpup{to{transform:translateY(-70px);opacity:0}}
+
+/* ===== 結果画面 ===== */
+.result{text-align:center;padding-top:20px}
+.result h1{font-size:34px;margin:8px 0;color:var(--green-d)}
+.result.fail h1{color:var(--red-d)}
+.big-stars{font-size:64px;letter-spacing:6px;margin:6px 0}
+.big-stars span{display:inline-block;filter:grayscale(1);opacity:.3;transition:.3s}
+.big-stars span.got{filter:none;opacity:1;animation:starpop .45s ease}
+@keyframes starpop{0%{transform:scale(.2)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.res-cards{display:flex;gap:12px;justify-content:center;margin:16px 0}
+.res-card{background:#fff;border-radius:18px;padding:12px 18px;min-width:120px;box-shadow:0 4px 0 #d8ddc4}
+.res-card b{display:block;font-size:28px}
+.missed{background:#fff;border-radius:18px;padding:12px 16px;text-align:left;margin:14px 0;box-shadow:0 4px 0 #d8ddc4}
+.missed h3{margin:0 0 6px;font-size:18px}
+.missed li{font-size:17px;margin:6px 0;font-weight:500}
+.missed li b{color:var(--red-d)}
+
+.cf{position:fixed;top:-14px;width:10px;height:14px;z-index:99;pointer-events:none;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(112vh) rotate(760deg)}}
+
+@media (max-width:520px){
+  .q-text{font-size:19px}.choice{font-size:18px}.teacher{width:100px}.teacher.sm{width:76px}
+  .bubble{font-size:16px}.ch-title{font-size:20px}
+}
+</style>
+</head>
+<body>
+<!-- 先生の毛の色（グラデーション）。どの画面からも使えるようにここに置く -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="fur" cx="42%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#fffef7"/><stop offset=".65" stop-color="#fbf6e0"/><stop offset="1" stop-color="#ece2bf"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<!-- ホーム画面 -->
+<div id="home" class="screen active"></div>
+<!-- クイズ画面 -->
+<div id="quiz" class="screen"></div>
+<!-- 結果画面 -->
+<div id="result" class="screen"></div>
+
+<div id="modal" class="modal"><div class="sheet" id="sheet"></div></div>
+<div id="feedback" class="feedback"><div class="inner" id="fbInner"></div></div>
+
+<script>
+"use strict";
+/* =========================================================
+   れきしクエスト
+   ・ここを変えると先生の名前が変わります
+   ========================================================= */
+const TEACHER_NAME = "もち先生";
+
+/* =========================================================
+   問題データ
+   q: 問題文（{漢字|よみ} と書くとふりがなが付きます）
+   a: 正解  y: 正解のよみ（ひらがなで答えてもOKにするため）
+   d: 4択のときの「まちがいの選択肢」
+   alt: ほかに正解にしてよい答え
+   e: 答えのあとに出る説明
+   o4: true なら、どの答え方でも4択で出す
+   ========================================================= */
+const CHAPTERS = [
+{
+  id:29, title:"天下統一への歩み", era:"安土桃山時代", color:"#f39c34",
+  stages:[
+  { name:"鉄砲とキリスト教", icon:"💥", qs:[
+    {q:"1543年、ポルトガル人を乗せた中国船が流れ着き、日本に鉄砲が伝わった島はどこ？", a:"種子島", y:"たねがしま", d:["屋久島","対馬","佐渡島"], e:"鹿児島県の種子島。だから鉄砲は「種子島」ともよばれたよ。"},
+    {q:"種子島に流れ着いた船に乗っていて、日本に初めて来たヨーロッパ人は何人？", a:"ポルトガル人", y:"ぽるとがるじん", alt:["ポルトガル"], d:["スペイン人","オランダ人","イギリス人"], e:"日本に初めて来たヨーロッパ人はポルトガル人。"},
+    {q:"鉄砲が日本に伝わったのは何年？", a:"1543", y:"1543", alt:["1543年"], d:["1549","1560","1575"], e:"1543年。「以後よさん（1543）、鉄砲伝来」とおぼえよう。"},
+    {q:"1549年に{鹿児島|かごしま}に来て、日本に初めてキリスト教を伝えた宣教師はだれ？", a:"フランシスコ・ザビエル", y:"ふらんしすこざびえる", alt:["ザビエル","フランシスコザビエル"], d:["ウィリアム・アダムズ","ヤン・ヨーステン","天草四郎"], e:"フランシスコ・ザビエル。イエズス会の宣教師だよ。"},
+    {q:"キリスト教が日本に伝わったのは何年？", a:"1549", y:"1549", alt:["1549年"], d:["1543","1582","1600"], e:"1549年。「以後よく（1549）広まるキリスト教」。"},
+    {q:"ザビエルが入っていた、カトリックの宣教師の会を何という？", a:"イエズス会", y:"いえずすかい", d:["一向宗","株仲間","五人組"], e:"イエズス会。カトリックを世界に広めようとした会だよ。"},
+    {q:"鉄砲の産地として栄えた、大阪府の都市はどこ？", a:"堺", y:"さかい", d:["長崎","平戸","江戸"], e:"堺（大阪府）。ほかに国友（滋賀県）、根来（和歌山県）でもつくられたよ。"},
+    {q:"鉄砲が使われるようになって、戦い方はどう変わった？", a:"足軽鉄砲隊による集団戦法になった", o4:true, d:["一騎打ちが中心になった","戦いがなくなった","船での戦いだけになった"], e:"一騎打ちから、足軽鉄砲隊を中心にした集団戦法へ。城の壁も厚くなったよ。"},
+  ]},
+  { name:"南蛮貿易", icon:"⛵", qs:[
+    {q:"キリスト教を保護し、自分も信者になった大名を何という？", a:"キリシタン大名", y:"きりしたんだいみょう", d:["外様大名","譜代大名","戦国大名"], e:"キリシタン大名。有馬・大友・大村などがいたよ。"},
+    {q:"1582年、キリシタン大名が4人の少年をローマ法王のもとへ送った使節を何という？", a:"天正遣欧使節", y:"てんしょうけんおうしせつ", d:["朝鮮通信使","遣唐使","遣隋使"], e:"天正遣欧使節。伊東マンショら13〜14歳の少年4人だよ。"},
+    {q:"当時の日本で、ポルトガル人やスペイン人は何とよばれた？", a:"南蛮人", y:"なんばんじん", d:["唐人","蝦夷","琉球人"], e:"南蛮人。「南の方から来た外国人」という意味。"},
+    {q:"ポルトガル人やスペイン人との貿易を何という？", a:"南蛮貿易", y:"なんばんぼうえき", d:["朱印船貿易","勘合貿易","日宋貿易"], e:"南蛮貿易。主に長崎や平戸で行われたよ。"},
+    {q:"南蛮貿易は、主に長崎と（　）で行われた。（長崎県の港）", a:"平戸", y:"ひらど", d:["種子島","下関","新潟"], e:"長崎と平戸（どちらも長崎県）。"},
+    {q:"南蛮貿易で、日本から輸出された主なものは？", a:"銀", y:"ぎん", d:["鉄砲","生糸","火薬"], e:"日本からは銀。鉄砲・火薬・生糸などは輸入品だよ。"},
+    {q:"宣教師が建てた教会を、当時の人々は何とよんだ？", a:"南蛮寺", y:"なんばんじ", d:["本能寺","延暦寺","石山本願寺"], e:"南蛮寺。教会のことをこうよんだよ。"},
+    {q:"南蛮貿易で輸入されたものとして正しいものは？", a:"鉄砲・火薬・生糸", o4:true, d:["銀・刀・米","お茶・陶磁器・米","銀・金・銅"], e:"鉄砲・火薬・中国産の生糸や絹織物などが輸入されたよ。"},
+  ]},
+  { name:"織田信長", icon:"🏯", qs:[
+    {q:"1560年、織田信長が今川義元を破った戦いは？", a:"桶狭間の戦い", y:"おけはざまのたたかい", alt:["桶狭間"], d:["長篠の戦い","関ヶ原の戦い","山崎の戦い"], e:"桶狭間の戦い。信長が名をあげた戦いだよ。"},
+    {q:"1573年、信長が15代将軍足利義昭を京都から追放して、ほろぼした幕府は？", a:"室町幕府", y:"むろまちばくふ", d:["鎌倉幕府","江戸幕府","大和朝廷"], e:"室町幕府。1573年にほろびたよ。"},
+    {q:"1575年、信長が徳川家康と組んで、鉄砲を有効に使って武田勝頼を破った戦いは？", a:"長篠の戦い", y:"ながしののたたかい", alt:["長篠"], d:["桶狭間の戦い","関ヶ原の戦い","大阪の陣"], e:"長篠の戦い。武田軍の騎馬隊を足軽鉄砲隊で破ったよ。"},
+    {q:"信長が{琵琶湖|びわこ}のほとりに築いた、天下統一の根拠地の城は？", a:"安土城", y:"あづちじょう", d:["大阪城","姫路城","江戸城"], e:"安土城。5層の天守閣をもつ城だったよ。"},
+    {q:"市場の税を免除し、座の特権を廃止して、だれでも自由に商工業ができるようにした政策は？", a:"楽市・楽座", y:"らくいちらくざ", alt:["楽市楽座"], d:["太閤検地","刀狩","参勤交代"], e:"楽市・楽座。安土城下で行ったよ。"},
+    {q:"1582年、信長が家来の明智光秀にそむかれて自害した事件は？", a:"本能寺の変", y:"ほんのうじのへん", d:["応仁の乱","島原・天草一揆","大阪の陣"], e:"本能寺の変。京都の本能寺でおきたよ。"},
+    {q:"本能寺の変で、信長にそむいた家来はだれ？", a:"明智光秀", y:"あけちみつひで", d:["柴田勝家","石田三成","今川義元"], e:"明智光秀。"},
+    {q:"信長が焼き打ちにした、{比叡山|ひえいざん}の寺は？", a:"延暦寺", y:"えんりゃくじ", d:["本能寺","南蛮寺","金閣寺"], e:"比叡山延暦寺。信長は仏教の勢力をおさえたよ。"},
+    {q:"信長が戦った、浄土真宗の信者たちによる一揆を何という？", a:"一向一揆", y:"いっこういっき", d:["島原・天草一揆","百姓一揆","土一揆"], e:"一向一揆。本拠地の大阪の石山本願寺を攻め落としたよ。"},
+  ]},
+  { name:"豊臣秀吉", icon:"🌾", qs:[
+    {q:"山崎で明智光秀を倒し、信長の後継者になったのはだれ？", a:"豊臣秀吉", y:"とよとみひでよし", d:["徳川家康","柴田勝家","足利義昭"], e:"豊臣秀吉。"},
+    {q:"秀吉が石山本願寺のあとに築いた、全国統一の根拠地の城は？", a:"大阪城", y:"おおさかじょう", alt:["大坂城"], d:["安土城","姫路城","江戸城"], e:"大阪城。1583年に築き始めたよ。"},
+    {q:"秀吉が全国の田畑の広さや土地のよしあしを調べ、収穫量を石高で表した政策は？", a:"太閤検地", y:"たいこうけんち", alt:["検地"], d:["刀狩","楽市・楽座","武家諸法度"], e:"太閤検地。年貢を確実に取るために行ったよ。"},
+    {q:"1588年、秀吉が百姓から刀ややりなどの武器を取り上げた政策は？", a:"刀狩", y:"かたながり", alt:["刀狩り","刀狩令"], d:["太閤検地","禁教令","御触書"], e:"刀狩。一揆を防ぎ、百姓を農業に打ちこませるためだよ。"},
+    {q:"検地と刀狩によって、百姓と武士の身分がはっきり分かれたことを何という？", a:"兵農分離", y:"へいのうぶんり", d:["鎖国","幕藩体制","下剋上"], e:"兵農分離。身分制度のもとになったよ。"},
+    {q:"1590年、秀吉は小田原の（　）氏を倒して全国統一を完成した。", a:"北条", y:"ほうじょう", alt:["北条氏"], d:["武田","今川","毛利"], e:"北条氏。そのあと東北の大名も従えたよ。"},
+    {q:"秀吉が全国統一を完成したのは何年？", a:"1590", y:"1590", alt:["1590年"], d:["1582","1588","1600"], e:"1590年。"},
+    {q:"秀吉が朝廷から任命された、天皇を助けて政治を行う役職は？", a:"関白", y:"かんぱく", alt:["太政大臣"], d:["征夷大将軍","老中","大老"], e:"関白。のちに太政大臣にもなったよ。"},
+  ]},
+  { name:"対外政策と桃山文化", icon:"🎨", qs:[
+    {q:"1587年、秀吉が宣教師を国外に追放した命令は？", a:"バテレン追放令", y:"ばてれんついほうれい", alt:["宣教師追放令","宣教師の国外追放令"], d:["禁教令","刀狩令","武家諸法度"], e:"バテレン追放令（宣教師の国外追放令）。でも貿易はすすめたので禁止は徹底しなかったよ。"},
+    {q:"秀吉は（　）を征服しようとして、朝鮮に2度大軍を送った。", a:"明", y:"みん", d:["清","唐","宋"], e:"明（今の中国）を征服しようとしたよ。"},
+    {q:"朝鮮侵略で、水軍を率いて日本軍を苦しめた朝鮮の人物は？", a:"李舜臣", y:"りしゅんしん", d:["天草四郎","石田三成","山田長政"], e:"李舜臣の水軍や明の援軍で、日本軍は苦戦したよ。"},
+    {q:"1592年の1回目の朝鮮侵略を何という？", a:"文禄の役", y:"ぶんろくのえき", d:["慶長の役","応仁の乱","島原の乱"], e:"文禄の役（1592年）。2回目は慶長の役（1597年）。"},
+    {q:"1597年の2回目の朝鮮侵略を何という？", a:"慶長の役", y:"けいちょうのえき", d:["文禄の役","応仁の乱","大阪の陣"], e:"慶長の役。秀吉が病死して兵を引き上げたよ。"},
+    {q:"大名や大商人の気風を反映した、豪華で雄大な安土桃山時代の文化は？", a:"桃山文化", y:"ももやまぶんか", d:["元禄文化","国風文化","東山文化"], e:"桃山文化。"},
+    {q:"「唐獅子図屏風」をえがいた絵師はだれ？", a:"狩野永徳", y:"かのうえいとく", d:["雪舟","千利休","出雲の阿国"], e:"狩野永徳。ふすまや屏風に豪華な絵をえがいたよ。"},
+    {q:"茶の湯を茶道として大成した、堺の商人はだれ？", a:"千利休", y:"せんのりきゅう", d:["狩野永徳","出雲の阿国","李舜臣"], e:"千利休。信長や秀吉に仕えたよ。"},
+    {q:"17世紀の初め、出雲の阿国が始めた踊りは？", a:"歌舞伎踊り", y:"かぶきおどり", alt:["歌舞伎","かぶき踊り"], d:["能","人形浄瑠璃","盆踊り"], e:"歌舞伎踊り。のちの歌舞伎のもとになったよ。"},
+    {q:"白鷺城ともよばれる、世界文化遺産の城は？", a:"姫路城", y:"ひめじじょう", d:["安土城","大阪城","江戸城"], e:"姫路城（兵庫県）。安土桃山時代の城のようすをよく残しているよ。"},
+    {q:"城の中心になる、いちばん高い建物を何という？", a:"天守閣", y:"てんしゅかく", alt:["天守"], d:["本丸","書院","茶室"], e:"天守閣。支配者の権威を示したよ。"},
+    {q:"朝鮮からつれてこられた陶工によって始まった、佐賀県の焼き物は？", a:"有田焼", y:"ありたやき", alt:["伊万里焼"], d:["瀬戸焼","九谷焼","備前焼"], e:"有田焼（伊万里焼）。ヨーロッパにも輸出されたよ。"},
+  ]},
+  ]
+},
+{
+  id:30, title:"徳川家康と江戸幕府", era:"江戸時代(1)", color:"#3a9ad9",
+  stages:[
+  { name:"江戸幕府の成立", icon:"⚔️", qs:[
+    {q:"1600年、徳川家康が石田三成らを破った「天下分け目の戦い」は？", a:"関ヶ原の戦い", y:"せきがはらのたたかい", alt:["関ケ原の戦い","関ヶ原","関ケ原"], d:["長篠の戦い","桶狭間の戦い","大阪の陣"], e:"関ヶ原の戦い（岐阜県）。"},
+    {q:"関ヶ原の戦いで、豊臣方の中心だった人物は？", a:"石田三成", y:"いしだみつなり", d:["明智光秀","武田勝頼","今川義元"], e:"石田三成。"},
+    {q:"関ヶ原の戦いは何年？", a:"1600", y:"1600", alt:["1600年"], d:["1590","1603","1615"], e:"1600年。"},
+    {q:"1603年、徳川家康が朝廷から任命された役職は？", a:"征夷大将軍", y:"せいいたいしょうぐん", alt:["将軍"], d:["関白","太政大臣","老中"], e:"征夷大将軍。"},
+    {q:"家康が幕府を開いた場所は？", a:"江戸", y:"えど", d:["京都","大阪","鎌倉"], e:"江戸（今の東京）。約260年続いたよ。"},
+    {q:"江戸幕府が開かれたのは何年？", a:"1603", y:"1603", alt:["1603年"], d:["1600","1615","1635"], e:"1603年。「ひとろうおさまる（1603）江戸幕府」。"},
+    {q:"1614年と1615年、家康が豊臣氏をほろぼした戦いは？", a:"大阪の陣", y:"おおさかのじん", alt:["大坂の陣","大阪冬の陣","大阪夏の陣","大坂冬の陣","大坂夏の陣"], d:["関ヶ原の戦い","島原・天草一揆","本能寺の変"], e:"大阪冬の陣（1614年）と大阪夏の陣（1615年）。"},
+    {q:"大阪城にいた、秀吉の子はだれ？", a:"豊臣秀頼", y:"とよとみひでより", d:["豊臣秀吉","徳川秀忠","石田三成"], e:"豊臣秀頼。大阪の陣でほろぼされたよ。"},
+  ]},
+  { name:"江戸幕府のしくみ", icon:"🏛️", qs:[
+    {q:"全国を幕府領と藩に分け、将軍と大名が強い権力で土地と人民を支配したしくみは？", a:"幕藩体制", y:"ばくはんたいせい", d:["兵農分離","鎖国","寺請制度"], e:"幕藩体制。"},
+    {q:"大名が支配した領地と、それを支配するしくみを何という？", a:"藩", y:"はん", d:["県","座","国司"], e:"藩。"},
+    {q:"将軍の下で政治を行った、ふだん置かれている最高の役職は？", a:"老中", y:"ろうじゅう", d:["大老","若年寄","奉行"], e:"老中。4〜5名で政治を行ったよ。"},
+    {q:"必要なときだけ置かれた、臨時の最高の役職は？", a:"大老", y:"たいろう", d:["老中","若年寄","京都所司代"], e:"大老。"},
+    {q:"朝廷や公家を監視するために、京都に置かれた役職は？", a:"京都所司代", y:"きょうとしょしだい", d:["大阪城代","町奉行","勘定奉行"], e:"京都所司代。"},
+    {q:"幕府の財政を担当した奉行は？", a:"勘定奉行", y:"かんじょうぶぎょう", d:["寺社奉行","町奉行","京都所司代"], e:"勘定奉行。寺社奉行・町奉行とあわせて三奉行。"},
+    {q:"幕府が直接支配して金を得ていた、新潟県の金山は？", a:"佐渡金山", y:"さどきんざん", alt:["佐渡"], d:["石見銀山","種子島","平戸"], e:"佐渡金山。石見銀山（島根県）なども直接支配したよ。"},
+    {q:"将軍直属の家来で、将軍に会うことができたのは？", a:"旗本", y:"はたもと", d:["御家人","名主","外様大名"], e:"旗本。御家人は将軍に会えなかったよ。"},
+  ]},
+  { name:"大名の統制", icon:"📜", qs:[
+    {q:"将軍から1万石以上の領地をあたえられた武士を何という？", a:"大名", y:"だいみょう", d:["旗本","御家人","名主"], e:"大名。"},
+    {q:"徳川氏の一族の大名を何という？", a:"親藩", y:"しんぱん", d:["譜代大名","外様大名","旗本"], e:"親藩。"},
+    {q:"関ヶ原の戦いの前から、徳川氏の家来だった大名を何という？", a:"譜代大名", y:"ふだいだいみょう", alt:["譜代"], d:["外様大名","親藩","キリシタン大名"], e:"譜代大名。老中などの重要な役につけたよ。"},
+    {q:"関ヶ原の戦いの後に徳川氏に従った大名を何という？", a:"外様大名", y:"とざまだいみょう", alt:["外様"], d:["譜代大名","親藩","旗本"], e:"外様大名。九州や東北など江戸から遠い地に置かれたよ。"},
+    {q:"外様大名は、どんなところに配置された？", a:"江戸から遠いところ", o4:true, d:["江戸のすぐ近く","京都の中","大阪城の中"], e:"九州や東北など、江戸から遠いところ。反抗しにくくするためだよ。"},
+    {q:"尾張・紀伊・水戸の徳川家をまとめて何という？", a:"御三家", y:"ごさんけ", d:["三奉行","三都","五大老"], e:"御三家。親藩の中でも特に重んじられたよ。"},
+    {q:"1615年、大名を取りしまるために定めた法律は？", a:"武家諸法度", y:"ぶけしょはっと", d:["禁中並公家諸法度","御触書","刀狩令"], e:"武家諸法度。違反した大名は領地を取り上げられたよ。"},
+    {q:"大名を1年おきに江戸と領地に住まわせ、妻子を江戸に置かせた制度は？", a:"参勤交代", y:"さんきんこうたい", d:["五人組","寺請制度","楽市・楽座"], e:"参勤交代。大名は行列の費用で経済力が弱まったよ。"},
+    {q:"1635年、参勤交代を制度にした3代将軍はだれ？", a:"徳川家光", y:"とくがわいえみつ", d:["徳川家康","徳川秀忠","徳川綱吉"], e:"徳川家光。「わたしは生まれながらの将軍である」と言ったといわれるよ。"},
+    {q:"天皇や公家の行動を制限するために定めた法律は？", a:"禁中並公家諸法度", y:"きんちゅうならびにくげしょはっと", d:["武家諸法度","御触書","バテレン追放令"], e:"禁中並公家諸法度。"},
+  ]},
+  { name:"身分制度", icon:"👘", qs:[
+    {q:"江戸時代、支配する身分とされたのは？", a:"武士", y:"ぶし", d:["百姓","町人","公家"], e:"武士。人口の1割にも満たなかったよ。"},
+    {q:"武士の特権で、名字を名のり、刀を差すことを何という？", a:"名字帯刀", y:"みょうじたいとう", d:["切捨御免","楽市楽座","兵農分離"], e:"名字帯刀。"},
+    {q:"百姓や町人が無礼なことをしたとき、切りすててもよいとされた武士の特権は？", a:"切捨御免", y:"きりすてごめん", alt:["切り捨て御免"], d:["名字帯刀","参勤交代","五公五民"], e:"切捨御免。"},
+    {q:"江戸時代の人口の約85%をしめた身分は？", a:"百姓", y:"ひゃくしょう", d:["武士","町人","公家"], e:"百姓。年貢を納めて武士の生活を支えたよ。"},
+    {q:"自分の土地を持ち、年貢を納める百姓を何という？", a:"本百姓", y:"ほんびゃくしょう", d:["水呑百姓","名主","町人"], e:"本百姓。"},
+    {q:"土地を持たず、土地を借りて耕す貧しい百姓を何という？", a:"水呑百姓", y:"みずのみびゃくしょう", d:["本百姓","名主","組頭"], e:"水呑百姓（小作人）。"},
+    {q:"有力な本百姓がなった村役人で、村のまとめ役は？（庄屋ともいう）", a:"名主", y:"なぬし", alt:["庄屋"], d:["組頭","百姓代","町年寄"], e:"名主（庄屋）。組頭・百姓代とあわせて村役人。"},
+    {q:"城下町に住んだ職人や商人を、まとめて何とよんだ？", a:"町人", y:"ちょうにん", d:["百姓","武士","公家"], e:"町人。百姓より税は軽かったよ。"},
+  ]},
+  { name:"百姓のくらし", icon:"🍙", qs:[
+    {q:"百姓が武士の生活を支えるために納めた米を何という？", a:"年貢", y:"ねんぐ", alt:["年貢米"], d:["石高","生糸","銀"], e:"年貢。"},
+    {q:"収穫の4割を年貢として納めることを何という？", a:"四公六民", y:"しこうろくみん", d:["五公五民","名字帯刀","兵農分離"], e:"四公六民（4割が年貢）。"},
+    {q:"収穫の5割を年貢として納めることを何という？", a:"五公五民", y:"ごこうごみん", d:["四公六民","切捨御免","三都"], e:"五公五民（5割が年貢）。"},
+    {q:"百姓を5戸くらいで1組にし、年貢や犯罪に共同で責任を負わせた制度は？", a:"五人組", y:"ごにんぐみ", d:["寺請制度","株仲間","座"], e:"五人組。おたがいに監視させたよ。"},
+    {q:"百姓の生活を細かく制限した、幕府のおふれを何という？", a:"御触書", y:"おふれがき", alt:["慶安の御触書","慶安御触書"], d:["武家諸法度","禁教令","刀狩令"], e:"御触書。「酒や茶を買って飲んではならない」などと書かれたよ。"},
+    {q:"年貢を確実に取るため、幕府が百姓に禁止したことは？", a:"土地を売り買いすること", o4:true, d:["米をつくること","村に住むこと","年貢を納めること"], e:"土地の売買を禁止したり、米以外の作物を勝手につくることを制限したよ。"},
+    {q:"村役人のうち、名主・組頭とならぶ役は？", a:"百姓代", y:"ひゃくしょうだい", d:["町年寄","老中","旗本"], e:"百姓代。"},
+    {q:"町の行事を決めたりした町役人は？（町名主とならぶ）", a:"町年寄", y:"まちどしより", alt:["町名主"], d:["名主","組頭","老中"], e:"町年寄や町名主。町奉行の下で町を運営したよ。"},
+  ]},
+  ]
+},
+{
+  id:31, title:"鎖国、産業と都市の発達", era:"江戸時代(2)", color:"#9b59b6",
+  stages:[
+  { name:"日本人の海外進出", icon:"🚢", qs:[
+    {q:"1600年に豊後（大分県）に流れ着いたオランダ船の航海士で、家康の外交の相談役になったイギリス人は？", a:"ウィリアム・アダムズ", y:"うぃりあむあだむず", alt:["ウィリアムアダムズ","アダムズ","三浦按針"], d:["ヤン・ヨーステン","ザビエル","シャクシャイン"], e:"ウィリアム・アダムズ（日本名は三浦按針）。"},
+    {q:"ウィリアム・アダムズといっしょに、家康の外交の相談役になったオランダ人は？", a:"ヤン・ヨーステン", y:"やんよーすてん", alt:["ヤンヨーステン","ヨーステン"], d:["ウィリアム・アダムズ","ザビエル","李舜臣"], e:"ヤン・ヨーステン。"},
+    {q:"将軍が発行した、海外に渡ってよいという許可証は？", a:"朱印状", y:"しゅいんじょう", d:["御触書","風説書","武家諸法度"], e:"朱印状。"},
+    {q:"朱印状を持った船による、東南アジアとの貿易を何という？", a:"朱印船貿易", y:"しゅいんせんぼうえき", d:["南蛮貿易","勘合貿易","日宋貿易"], e:"朱印船貿易。"},
+    {q:"東南アジア各地に移り住んだ日本人がつくった町を何という？", a:"日本町", y:"にほんまち", alt:["にっぽんまち"], d:["唐人屋敷","出島","城下町"], e:"日本町。多いときで7000人くらいが住んでいたよ。"},
+    {q:"シャム（今のタイ）の日本町の頭領として活躍した人物は？", a:"山田長政", y:"やまだながまさ", d:["天草四郎","李舜臣","シャクシャイン"], e:"山田長政。シャム国王に仕えたよ。"},
+    {q:"オランダとイギリスが商館を建てた、長崎県の港は？", a:"平戸", y:"ひらど", d:["出島","堺","博多"], e:"平戸。"},
+  ]},
+  { name:"キリスト教の禁止", icon:"✝️", qs:[
+    {q:"1612年・1613年に、幕府がキリスト教を禁止した命令は？", a:"禁教令", y:"きんきょうれい", d:["武家諸法度","刀狩令","御触書"], e:"禁教令。1613年には全国に出されたよ。"},
+    {q:"1637年、島原と天草でキリスト教徒を中心に、重い年貢と禁教に反対しておこった一揆は？", a:"島原・天草一揆", y:"しまばらあまくさいっき", alt:["島原天草一揆","島原の乱"], d:["一向一揆","大阪の陣","百姓一揆"], e:"島原・天草一揆。約4か月にわたって抵抗したよ。"},
+    {q:"島原・天草一揆の大将とされた少年はだれ？", a:"天草四郎", y:"あまくさしろう", alt:["益田四郎時貞","天草四郎時貞","益田四郎"], d:["山田長政","伊東マンショ","明智光秀"], e:"天草四郎（益田四郎時貞）。"},
+    {q:"島原・天草一揆がおこったのは何年？", a:"1637", y:"1637", alt:["1637年"], d:["1612","1635","1641"], e:"1637年。"},
+    {q:"キリスト教徒を見つけるため、キリストやマリアの像をふませたことを何という？", a:"絵踏", y:"えぶみ", alt:["絵踏み","踏絵","踏み絵"], d:["刀狩","検地","参勤交代"], e:"絵踏。ふまなかった人はキリスト教徒とされ、きびしく罰せられたよ。"},
+    {q:"すべての人をどこかの寺に所属させ、キリスト教徒でないことを証明させた制度は？", a:"寺請制度", y:"てらうけせいど", d:["五人組","幕藩体制","兵農分離"], e:"寺請制度。"},
+    {q:"1635年、幕府が禁止したことは？", a:"日本人が海外へ行くことと帰国すること", o4:true, d:["外国船が日本に来ること全部","百姓が米をつくること","大名が江戸に来ること"], e:"日本人の海外渡航と帰国を禁止して、朱印船貿易は終わったよ。"},
+  ]},
+  { name:"鎖国", icon:"🔒", qs:[
+    {q:"1639年、3代将軍家光が来航を禁止した船は？", a:"ポルトガル船", y:"ぽるとがるせん", alt:["ポルトガル"], d:["オランダ船","中国船","朝鮮の船"], e:"ポルトガル船。"},
+    {q:"1641年、平戸のオランダ商館が移された、長崎の人工の島は？", a:"出島", y:"でじま", d:["平戸","種子島","佐渡"], e:"出島。"},
+    {q:"鎖国中も、長崎で貿易を許されたヨーロッパの国は？", a:"オランダ", y:"おらんだ", d:["ポルトガル","スペイン","イギリス"], e:"オランダ。キリスト教を広めなかったからだよ。"},
+    {q:"オランダ商館長が幕府に出した、海外のようすを知らせる報告書は？", a:"オランダ風説書", y:"おらんだふうせつがき", alt:["風説書"], d:["御触書","朱印状","武家諸法度"], e:"オランダ風説書。幕府は海外の情報を知ることができたよ。"},
+    {q:"鎖国中、オランダのほかに長崎で貿易を許された国は？", a:"中国", y:"ちゅうごく", alt:["清","明","中国(明・清)"], d:["スペイン","ポルトガル","イギリス"], e:"中国（明・清）。"},
+    {q:"長崎で、中国人を住まわせた場所を何という？", a:"唐人屋敷", y:"とうじんやしき", d:["出島","日本町","蔵屋敷"], e:"唐人屋敷。"},
+    {q:"外国との交流を制限した、江戸時代の状態を何という？", a:"鎖国", y:"さこく", d:["開国","兵農分離","幕藩体制"], e:"鎖国。約200年続いたよ。"},
+    {q:"ポルトガル船の来航が禁止されたのは何年？", a:"1639", y:"1639", alt:["1639年"], d:["1635","1637","1641"], e:"1639年。"},
+  ]},
+  { name:"朝鮮・琉球・蝦夷地", icon:"🗾", qs:[
+    {q:"秀吉の朝鮮侵略のあと、朝鮮との国交の回復を仲立ちした藩は？", a:"対馬藩", y:"つしまはん", alt:["対馬"], d:["薩摩藩","松前藩","水戸藩"], e:"対馬藩（宗氏）。"},
+    {q:"将軍が代わるごとに、朝鮮から江戸に来た使節は？", a:"朝鮮通信使", y:"ちょうせんつうしんし", alt:["通信使"], d:["天正遣欧使節","遣唐使","朱印船"], e:"朝鮮通信使。400〜500人もの大行列だったよ。"},
+    {q:"朝鮮との貿易は、朝鮮半島の（　）で行われた。", a:"釜山", y:"ぷさん", alt:["ふざん"], d:["長崎","出島","平戸"], e:"釜山に置かれた倭館で、対馬藩が貿易を行ったよ。"},
+    {q:"1609年、薩摩藩に征服された王国は？", a:"琉球王国", y:"りゅうきゅうおうこく", alt:["琉球"], d:["朝鮮","シャム","蝦夷地"], e:"琉球王国（今の沖縄県）。将軍や国王が代わるごとに使節を江戸に送ったよ。"},
+    {q:"今の北海道は、当時何とよばれていた？", a:"蝦夷地", y:"えぞち", d:["琉球","対馬","出羽"], e:"蝦夷地。アイヌの人々がくらしていたよ。"},
+    {q:"蝦夷地で、アイヌの人々との取り引きを独占した藩は？", a:"松前藩", y:"まつまえはん", d:["薩摩藩","対馬藩","水戸藩"], e:"松前藩（北海道の渡島半島南部）。"},
+    {q:"1669年、松前藩の不正な取り引きに対して立ち上がったアイヌの指導者は？", a:"シャクシャイン", y:"しゃくしゃいん", d:["天草四郎","山田長政","李舜臣"], e:"シャクシャイン。松前藩に敗れ、以後アイヌはさらにきびしい支配を受けたよ。"},
+  ]},
+  { name:"産業と都市の発達", icon:"🏪", qs:[
+    {q:"土を深く耕すための農具は？", a:"備中ぐわ", y:"びっちゅうぐわ", alt:["備中鍬"], d:["千歯こき","千石どおし","唐箕"], e:"備中ぐわ。"},
+    {q:"脱穀（いねからもみを取ること）を楽にした農具は？", a:"千歯こき", y:"せんばこき", alt:["千歯扱き"], d:["備中ぐわ","唐箕","千石どおし"], e:"千歯こき。"},
+    {q:"肥料として使われた、いわしを干したものは？", a:"干鰯", y:"ほしか", d:["油かす","わら","石灰"], e:"干鰯や油かすが肥料に使われたよ。"},
+    {q:"大商人や手工業者がつくった同業者の組合を何という？", a:"株仲間", y:"かぶなかま", d:["五人組","寺請制度","座"], e:"株仲間。幕府や藩に税を納めて営業を独占したよ。"},
+    {q:"金貨・銀貨の交換や貸し付けなど、今の銀行のような仕事をした商人は？", a:"両替商", y:"りょうがえしょう", d:["問屋","蔵元","札差"], e:"両替商。三井や鴻池などが有名だよ。"},
+    {q:"商品の流通の中心地として「天下の台所」とよばれた都市は？", a:"大阪", y:"おおさか", alt:["大坂"], d:["江戸","京都","長崎"], e:"大阪。諸藩の蔵屋敷がならんだよ。"},
+    {q:"「将軍のおひざもと」とよばれた都市は？", a:"江戸", y:"えど", d:["大阪","京都","長崎"], e:"江戸。18世紀の初めには人口100万人をこえたといわれるよ。"},
+    {q:"江戸・大阪・京都をまとめて何とよんだ？", a:"三都", y:"さんと", d:["五街道","御三家","三奉行"], e:"三都。"},
+    {q:"江戸の日本橋を起点に整備された、5つの主な道をまとめて何という？", a:"五街道", y:"ごかいどう", d:["三都","東廻り航路","御三家"], e:"五街道（東海道・中山道・甲州街道・日光街道・奥州街道）。"},
+    {q:"五街道のうち、江戸と京都を海沿いに結んだ道は？", a:"東海道", y:"とうかいどう", d:["中山道","甲州街道","日光街道"], e:"東海道。"},
+    {q:"大名が年貢米や特産物を売るために、大阪などに置いた建物は？", a:"蔵屋敷", y:"くらやしき", d:["唐人屋敷","出島","本陣"], e:"蔵屋敷。"},
+    {q:"関所で特にきびしく取りしまったのは「入鉄砲と（　）」。", a:"出女", y:"でおんな", d:["入女","出鉄砲","出男"], e:"入鉄砲と出女。江戸に武器が入ることと、大名の妻が江戸から逃げることを防いだよ。"},
+    {q:"江戸と大阪の間を往復して、品物を運んだ船は？", a:"菱垣廻船", y:"ひがきかいせん", alt:["樽廻船"], d:["朱印船","南蛮船","黒船"], e:"菱垣廻船や樽廻船。"},
+    {q:"商人が農民に道具や材料を貸して製品をつくらせ、それを買い取るしくみは？", a:"問屋制家内工業", y:"といやせいかないこうぎょう", d:["工場制手工業","株仲間","楽市・楽座"], e:"問屋制家内工業。"},
+    {q:"綿・あい・紅花など、売るためにつくる作物を何という？", a:"商品作物", y:"しょうひんさくもつ", d:["年貢米","特産物","主食"], e:"商品作物。"},
+  ]},
+  ]
+}
+];
+
+/* 答え方の種類と、もらえる★の数 */
+const MODES = {
+  choice:{name:"4択",     icon:"🔢", stars:1, desc:"4つから選ぶ"},
+  type:  {name:"キーボード", icon:"⌨️", stars:2, desc:"文字を打ちこむ"},
+  voice: {name:"音声",     icon:"🎤", stars:2, desc:"声で答える"},
+  hand:  {name:"手書き",   icon:"✍️", stars:3, desc:"指で書いて答える"},
+};
+
+/* 先生のセリフ */
+const LINES = {
+  greet:["今日もいっしょにがんばろう！","れきしの旅に出発だよ！","1日1ステージ、つづけるのが大事だよ","どのステージにする？"],
+  correct:["せいかい！すごいね！","やったね！","かんぺき！","よくおぼえてたね！","その調子！","ばっちり！"],
+  wrong:["おしい！いっしょにおぼえよう","だいじょうぶ、つぎはできるよ","まちがえた問題は、あとでもう一回出るよ"],
+  clear:["ステージクリア！おめでとう！","すごい！よくがんばったね！"],
+  fail:["ハートがなくなっちゃった…もう一回やってみよう！"],
+};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* =========================================================
+   保存（進み具合をこの端末に保存）
+   ========================================================= */
+const SAVE_KEY = "rekishi-quest-v1";
+function defaultSave(){ return {stars:{}, xp:0, streak:{last:null,count:0}, settings:{sfx:true, voice:true, autoRead:false}}; }
+function loadSave(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(s){ const d = defaultSave(); return {...d, ...s, settings:{...d.settings, ...(s.settings||{})}}; }
+  }catch(e){}
+  return defaultSave();
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+let save = loadSave();
+
+/* =========================================================
+   効果音（ブラウザの中で音を作っています）
+   ========================================================= */
+let actx = null;
+function audio(){
+  if(!actx){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return null; actx = new C(); }
+  if(actx.state === "suspended") actx.resume();
+  return actx;
+}
+function tone(freq, start, dur, type="sine", vol=0.2, slideTo=null){
+  if(!save.settings.sfx) return;
+  const a = audio(); if(!a) return;
+  const t = a.currentTime + start;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t+dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g).connect(a.destination);
+  o.start(t); o.stop(t+dur+0.05);
+}
+const SFX = {
+  tap(){ tone(760,0,.09,"sine",.16,520); },
+  correct(){ tone(1046.5,0,.13,"triangle",.28); tone(1568,.11,.3,"triangle",.28); },
+  wrong(){ tone(310,0,.18,"square",.07,220); tone(230,.17,.3,"square",.07,150); },
+  combo(){ [784,988,1175,1568].forEach((f,i)=>tone(f,i*.07,.13,"triangle",.2)); },
+  star(){ tone(1318,0,.1,"sine",.22); tone(1976,.08,.22,"sine",.2); },
+  clear(){ [523,659,784,1046].forEach((f,i)=>tone(f,i*.12,.22,"triangle",.24)); [523,659,784,1046].forEach(f=>tone(f,.55,.8,"sine",.09)); },
+  fail(){ [523,466,415,349].forEach((f,i)=>tone(f,i*.2,.28,"triangle",.2)); },
+  pop(){ tone(420,0,.09,"sine",.22,980); },
+};
+// ボタンを押したら「ポン」と鳴らす
+document.addEventListener("pointerdown", e=>{
+  audio();
+  const b = e.target.closest("button");
+  if(b && !b.disabled && !b.dataset.silent) SFX.tap();
+}, true);
+
+/* =========================================================
+   先生の声（読み上げ）
+   ========================================================= */
+let jaVoice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  jaVoice = vs.find(v=>v.lang==="ja-JP" && /Kyoko|O-ren|Google/.test(v.name)) || vs.find(v=>(v.lang||"").startsWith("ja")) || null;
+}
+if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, force=false){
+  if(!("speechSynthesis" in window)) return;
+  if(!save.settings.voice && !force) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP"; if(jaVoice) u.voice = jaVoice;
+  u.rate = 1.05; u.pitch = 1.35;
+  speechSynthesis.speak(u);
+}
+
+/* =========================================================
+   文字の処理
+   ========================================================= */
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const RUBY_RE = /\{([^|}]+)\|([^}]+)\}/g;
+const ruby  = s => esc(s).replace(RUBY_RE, "<ruby>$1<rt>$2</rt></ruby>");
+const plain = s => s.replace(RUBY_RE, "$1");
+const spoken = s => s.replace(RUBY_RE, "$2").replace(/（　）/g, "、なに、");
+
+// 漢数字（千五百四十三）を数字（1543）に直す
+function kanjiToNum(s){
+  if(!/^[〇一二三四五六七八九十百千]+$/.test(s)) return s;
+  const d = {"〇":0,"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9};
+  let total=0, cur=0;
+  for(const c of s){
+    if(c in d) cur = d[c];
+    else { const u = {"十":10,"百":100,"千":1000}[c]; total += (cur||1)*u; cur=0; }
+  }
+  return String(total+cur);
+}
+// 答えをくらべやすい形にそろえる（カタカナ→ひらがな、記号やスペースを消す など）
+function norm(s){
+  if(!s) return "";
+  s = String(s).normalize("NFKC").toLowerCase();
+  s = s.replace(/[\s・･=＝、。,.!?！？「」『』()\-]/g, "");
+  s = s.replace(/ヶ/g, "が").replace(/です$/, "").replace(/(\d)年$/, "$1");
+  s = s.replace(/[ァ-ヶ]/g, c=>String.fromCharCode(c.charCodeAt(0)-0x60));
+  return kanjiToNum(s);
+}
+function isCorrect(q, input){
+  const ok = [q.a, q.y, ...(q.alt||[])].filter(Boolean).map(norm);
+  return ok.includes(norm(input));
+}
+// 答え方のヒント（何文字か など）
+function answerKind(a){
+  if(/^\d+$/.test(a)) return {label:"数字で答えよう（例：1543）", len:a.length};
+  if(/^[゠-ヿ・]+$/.test(a)) return {label:"カタカナで答えよう（ひらがなでもOK）", len:a.replace(/・/g,"").length};
+  return {label:`漢字 ${[...a.replace(/・/g,"")].length} 文字（ひらがなでもOK）`, len:[...a.replace(/・/g,"")].length};
+}
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+/* =========================================================
+   もち先生のイラスト
+   ========================================================= */
+function teacherSVG(){
+  return `
+<svg class="mochi" viewBox="0 0 200 196" aria-label="${TEACHER_NAME}">
+  <ellipse cx="102" cy="188" rx="64" ry="7" fill="rgba(60,70,20,.12)"/>
+  <ellipse cx="112" cy="146" rx="58" ry="36" fill="url(#fur)" stroke="#e6dbb3" stroke-width="1.5"/>
+  <rect x="70" y="140" width="25" height="46" rx="12.5" fill="url(#fur)" stroke="#e6dbb3" stroke-width="1.5"/>
+  <rect x="112" y="142" width="25" height="44" rx="12.5" fill="url(#fur)" stroke="#e6dbb3" stroke-width="1.5"/>
+  <ellipse cx="98" cy="86" rx="82" ry="72" fill="url(#fur)" stroke="#e8deb8" stroke-width="1.5"/>
+  <g class="blush">
+    <ellipse cx="66" cy="118" rx="9" ry="5" fill="#ffb6b0"/>
+    <ellipse cx="122" cy="119" rx="9" ry="5" fill="#ffb6b0"/>
+  </g>
+  <g class="eyes-normal" fill="#2a2a2a">
+    <ellipse cx="78" cy="104" rx="4.6" ry="5.4"/>
+    <ellipse cx="110" cy="105" rx="4.6" ry="5.4"/>
+  </g>
+  <g class="eyes-happy" fill="none" stroke="#2a2a2a" stroke-width="3.4" stroke-linecap="round">
+    <path d="M71 107 q7 -9 14 0"/><path d="M103 108 q7 -9 14 0"/>
+  </g>
+  <g class="eyes-sad" fill="none" stroke="#2a2a2a" stroke-width="3.2" stroke-linecap="round">
+    <path d="M71 102 q7 6 14 2"/><path d="M103 104 q7 4 14 -2"/>
+  </g>
+  <path class="tear" d="M117 110 q4 8 0 11 q-4 -3 0 -11z" fill="#8fd0ff"/>
+  <g fill="none" stroke="#2a2a2a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M94 108 v4"/><path d="M89 117 l5 -5 l5 5"/>
+  </g>
+</svg>`;
+}
+function teacherBox(cls=""){ return `<div class="teacher ${cls}" id="tch">${teacherSVG()}</div>`; }
+function teacherMood(mood, anim){
+  const t = document.getElementById("tch"); if(!t) return;
+  t.classList.remove("t-happy","t-sad","t-jump","t-shake");
+  void t.offsetWidth; // アニメーションをもう一度動かすため
+  if(mood) t.classList.add("t-"+mood);
+  if(anim) t.classList.add("t-"+anim);
+}
+
+/* =========================================================
+   ホーム画面
+   ========================================================= */
+const key = (chId, si) => `${chId}-${si}`;
+const starsOf = (chId, si) => save.stars[key(chId,si)] || 0;
+function isUnlocked(ch, si){
+  if(si === 0) return true;                          // 各章の最初はいつでもOK
+  if(si === 5) return [0,1,2,3,4].every(i=>starsOf(ch.id,i)>0); // ボスは全部クリアで
+  return starsOf(ch.id, si-1) > 0;
+}
+function totalStars(){ return Object.values(save.stars).reduce((a,b)=>a+b,0); }
+
+function renderHome(){
+  const el = document.getElementById("home");
+  let html = `
+  <div class="topbar">
+    <div class="logo">れきしクエスト</div>
+    <div class="stats">
+      <div class="stat">🔥 ${save.streak.count}</div>
+      <div class="stat">⭐ ${totalStars()}</div>
+      <div class="stat">💎 ${save.xp}</div>
+      <button class="icon-btn" onclick="openSettings()">⚙️</button>
+    </div>
+  </div>
+  <div class="teacher-row">
+    ${teacherBox()}
+    <div class="bubble"><div class="tname">${TEACHER_NAME}</div><span id="greet">${pick(LINES.greet)}</span></div>
+  </div>`;
+  for(const ch of CHAPTERS){
+    html += `<section class="chapter" style="--c:${ch.color}">
+      <div class="ch-head"><div class="ch-num">第${ch.id}回 ・ ${ch.era}</div><div class="ch-title">${ch.title}</div></div>
+      <div class="path">`;
+    let nextMarked = false;
+    for(let si=0; si<6; si++){
+      const boss = si===5;
+      const unlocked = isUnlocked(ch, si);
+      const st = starsOf(ch.id, si);
+      const isNext = unlocked && st===0 && !nextMarked;
+      if(isNext) nextMarked = true;
+      const x = Math.round(Math.sin(si*1.15)*80);
+      const label = boss ? "まとめテスト" : ch.stages[si].name;
+      const icon = !unlocked ? "🔒" : boss ? "👑" : ch.stages[si].icon;
+      const maxStar = 3;
+      html += `<div class="node-wrap" style="transform:translateX(${x}px)">
+        <button class="node ${boss?"boss":""} ${unlocked?"":"locked"} ${isNext?"next":""}" onclick="tapNode(${ch.id},${si})">
+          ${isNext?`<span class="start-tag">スタート！</span>`:""}${icon}
+        </button>
+        <div class="node-label">${boss?"👑 ":""}${label}</div>
+        <div class="node-stars">${st?"★".repeat(st)+"☆".repeat(maxStar-st):""}</div>
+      </div>`;
+    }
+    html += `</div></section>`;
+  }
+  html += `<p class="small-note">ステージをタップして始めよう。むずかしい答え方ほど★がたくさんもらえるよ！</p>`;
+  el.innerHTML = html;
+}
+
+function tapNode(chId, si){
+  const ch = CHAPTERS.find(c=>c.id===chId);
+  if(!isUnlocked(ch, si)){
+    teacherMood(null,"shake");
+    document.getElementById("greet").textContent = si===5 ? "5つのステージを全部クリアすると挑戦できるよ！" : "前のステージをクリアするとあそべるよ！";
+    return;
+  }
+  openModeSelect(ch, si);
+}
+
+/* 答え方を選ぶポップアップ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function openModeSelect(ch, si){
+  const boss = si===5;
+  const title = boss ? "まとめテスト" : ch.stages[si].name;
+  const n = boss ? 12 : Math.min(8, ch.stages[si].qs.length);
+  let html = `<h2>${boss?"👑 ":""}${title}</h2>
+    <div class="subt">第${ch.id}回 ${ch.title} ・ ${n}問 ・ ハート3つ</div>
+    <div class="teacher-row" style="margin:4px 0">
+      ${teacherBox("sm")}
+      <div class="bubble" style="font-size:17px">どの答え方でちょうせんする？</div>
+    </div>
+    <div class="modes">`;
+  for(const [k,m] of Object.entries(MODES)){
+    const unsupported = k==="voice" && !SR;
+    html += `<button class="mode" ${unsupported?"disabled":""} onclick="startStage(${ch.id},${si},'${k}')">
+      <span class="mi">${m.icon}</span>${m.name}<br><span class="ms">${"★".repeat(m.stars)}</span>
+      <span class="md">${unsupported?"このブラウザでは使えないよ":m.desc}</span></button>`;
+  }
+  html += `</div><div class="row"><button class="btn gray wide" onclick="closeModal()">やめる</button></div>`;
+  showModal(html);
+}
+function showModal(html){ document.getElementById("sheet").innerHTML = html; document.getElementById("modal").classList.add("show"); }
+function closeModal(){ document.getElementById("modal").classList.remove("show"); }
+document.getElementById("modal").addEventListener("click", e=>{ if(e.target.id==="modal") closeModal(); });
+
+/* 設定 */
+function openSettings(){
+  const s = save.settings;
+  const sw = (k,label)=>`<div class="setting">${label}<button class="switch ${s[k]?"on":""}" onclick="toggleSetting('${k}')"></button></div>`;
+  showModal(`<h2>⚙️ せってい</h2>
+    ${sw("sfx","🔔 効果音")}
+    ${sw("voice","🗣️ 先生の声")}
+    ${sw("autoRead","📖 問題を自動で読み上げる")}
+    <div class="row"><button class="btn red" onclick="resetAll()">さいしょからやり直す</button></div>
+    <div class="row"><button class="btn gray wide" onclick="closeModal()">とじる</button></div>`);
+}
+function toggleSetting(k){ save.settings[k] = !save.settings[k]; persist(); openSettings(); }
+function resetAll(){
+  if(!confirm("★や💎がぜんぶ消えます。本当にやり直しますか？")) return;
+  save = defaultSave(); persist(); closeModal(); renderHome();
+}
+
+/* =========================================================
+   クイズ
+   ========================================================= */
+let Q = null;  // いま遊んでいるステージの情報
+
+function startStage(chId, si, mode){
+  closeModal();
+  const ch = CHAPTERS.find(c=>c.id===chId);
+  const boss = si===5;
+  const pool = boss ? ch.stages.flatMap(s=>s.qs) : ch.stages[si].qs;
+  const n = boss ? 12 : Math.min(8, pool.length);
+  const list = shuffle(pool).slice(0, n);
+  Q = {
+    ch, si, mode, boss,
+    title: boss ? "まとめテスト" : ch.stages[si].name,
+    queue: list.map(q=>({q, retry:false})),
+    total: n, cleared: 0, hearts: 3, combo: 0, firstTry: 0, xp: 0,
+    missed: [], current: null, locked: false,
+  };
+  show("quiz");
+  nextQuestion();
+}
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+
+function heartsHTML(){ return [0,1,2].map(i=>`<span class="${i<Q.hearts?"":"lost"}">❤️</span>`).join(""); }
+
+function nextQuestion(){
+  hideFeedback();
+  stopListening();
+  Q.current = Q.queue.shift();
+  Q.locked = false;
+  const {q, retry} = Q.current;
+  const mode = q.o4 ? "choice" : Q.mode;
+  const el = document.getElementById("quiz");
+  el.innerHTML = `
+    <div class="quiz-top">
+      <button class="quit" onclick="quitStage()">✕</button>
+      <div class="bar"><div style="width:${Q.cleared/Q.total*100}%"></div></div>
+      <div class="hearts">${heartsHTML()}</div>
+    </div>
+    <div class="combo" id="combo">${Q.combo>=3?`🔥 ${Q.combo}れんぞく！`:""}</div>
+    <div class="teacher-row">
+      ${teacherBox("sm")}
+      <div class="bubble">
+        <div class="q-tag">${retry?"🔁 もう一回！":""}${q.o4 && Q.mode!=="choice"?" この問題は4択だよ":""}</div>
+        <div class="q-text">${ruby(q.q)}</div>
+        <button class="read-btn" onclick="speak(spoken(Q.current.q.q), true)">🔈 読んで</button>
+      </div>
+    </div>
+    <div id="ans"></div>`;
+  const ans = document.getElementById("ans");
+  if(mode==="choice") renderChoices(ans, q);
+  else if(mode==="type") renderType(ans, q);
+  else if(mode==="voice") renderVoice(ans, q);
+  else renderHand(ans, q);
+  if(save.settings.autoRead) speak(spoken(q.q));
+}
+
+/* --- 4択 --- */
+function renderChoices(ans, q){
+  const opts = shuffle([q.a, ...q.d.slice(0,3)]);
+  ans.innerHTML = `<div class="choices">${opts.map((o,i)=>`<button class="choice" data-silent="1" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  ans.querySelectorAll(".choice").forEach(b=>b.addEventListener("click", ()=>{
+    if(Q.locked) return;
+    const ok = b.dataset.v === q.a;
+    b.classList.add(ok?"ok":"ng");
+    if(!ok) ans.querySelectorAll(".choice").forEach(x=>{ if(x.dataset.v===q.a) x.classList.add("ok"); });
+    judge(ok);
+  }));
+}
+
+/* 「ヒント」と「わからない」ボタン */
+function helperRow(q){
+  return `<div class="row">
+    <button class="btn gray" onclick="showHint()">💡 ヒント</button>
+    <button class="btn gray" onclick="giveUp()">🤔 わからない</button>
+  </div>`;
+}
+function hintArea(q){
+  const k = answerKind(q.a);
+  return `<div class="hint-line">${k.label}</div>
+    <div class="boxes" id="boxes">${Array.from({length:Math.min(k.len,14)},()=>"<span></span>").join("")}</div>`;
+}
+function showHint(){
+  const q = Q.current.q;
+  const first = [...q.a.replace(/・/g,"")][0];
+  const b = document.querySelector("#boxes span");
+  if(b) b.textContent = first;
+  teacherMood("happy");
+  speak(`さいしょの字は、${q.y ? q.y[0] : first}、だよ`);
+}
+function giveUp(){ if(!Q.locked) judge(false, ""); }
+
+/* --- キーボード --- */
+function renderType(ans, q){
+  ans.innerHTML = `${hintArea(q)}
+    <input id="typed" class="ans-input" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ここに答えを入れてね">
+    <div class="row"><button class="btn wide" onclick="submitTyped()">こたえる</button></div>
+    ${helperRow(q)}`;
+  const inp = document.getElementById("typed");
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); submitTyped(); } });
+  setTimeout(()=>inp.focus(), 50);
+}
+function submitTyped(){
+  if(Q.locked) return;
+  const v = document.getElementById("typed").value.trim();
+  if(!v){ teacherMood(null,"shake"); return; }
+  judge(isCorrect(Q.current.q, v), v);
+}
+
+/* --- 音声 --- */
+let recog = null;
+function renderVoice(ans, q){
+  ans.innerHTML = `${hintArea(q)}
+    <button class="mic" id="mic" data-silent="1" onclick="toggleListen()">🎤</button>
+    <div class="small-note" id="micNote">マイクをおして、答えを言ってね</div>
+    <div class="heard" id="heard"></div>
+    <div class="row" id="voiceConfirm" style="display:none">
+      <button class="btn blue" onclick="toggleListen()">🎤 もう一回話す</button>
+      <button class="btn" onclick="submitHeard()">これでこたえる</button>
+    </div>
+    ${helperRow(q)}`;
+}
+let heardList = [];
+function toggleListen(){
+  if(Q.locked) return;
+  if(recog){ stopListening(); return; }
+  SFX.pop();
+  speechSynthesis && speechSynthesis.cancel();
+  heardList = [];
+  document.getElementById("voiceConfirm").style.display = "none";
+  document.getElementById("heard").textContent = "";
+  try{
+    recog = new SR();
+    recog.lang = "ja-JP"; recog.interimResults = true; recog.maxAlternatives = 5; recog.continuous = false;
+  }catch(e){ document.getElementById("micNote").textContent = "音声入力が使えないみたい…"; return; }
+  const mic = document.getElementById("mic");
+  mic.classList.add("listening");
+  document.getElementById("micNote").textContent = "きいてるよ…";
+  recog.onresult = e=>{
+    const res = e.results[e.results.length-1];
+    document.getElementById("heard").textContent = res[0].transcript;
+    if(res.isFinal) heardList = Array.from(res).map(r=>r.transcript);
+  };
+  recog.onerror = e=>{
+    const msg = (e.error==="not-allowed"||e.error==="service-not-allowed")
+      ? "マイクが使えないよ。ブラウザでマイクを許可してね"
+      : e.error==="no-speech" ? "聞こえなかったよ。もう一回おしてね" : "うまく聞きとれなかったよ";
+    const n = document.getElementById("micNote"); if(n) n.textContent = msg;
+  };
+  recog.onend = ()=>{
+    recog = null;
+    const m = document.getElementById("mic"); if(m) m.classList.remove("listening");
+    if(!heardList.length || Q.locked) return;
+    if(heardList.some(t=>isCorrect(Q.current.q, t))){ judge(true, heardList.find(t=>isCorrect(Q.current.q,t))); return; }
+    document.getElementById("micNote").textContent = "こう聞こえたよ。これでいい？";
+    document.getElementById("heard").textContent = `「${heardList[0]}」`;
+    document.getElementById("voiceConfirm").style.display = "flex";
+  };
+  recog.start();
+}
+function stopListening(){ if(recog){ try{ recog.stop(); }catch(e){} } }
+function submitHeard(){ if(!Q.locked && heardList.length) judge(false, heardList[0]); }
+
+/* --- 手書き --- */
+let pad = null;
+function renderHand(ans, q){
+  ans.innerHTML = `<div class="hint-line">${answerKind(q.a).label}</div>
+    <div class="canvas-wrap"><canvas class="pad" id="pad"></canvas></div>
+    <div class="row">
+      <button class="btn gray" onclick="padUndo()">↩️ 1画もどす</button>
+      <button class="btn gray" onclick="padClear()">🧽 ぜんぶ消す</button>
+    </div>
+    <div class="row"><button class="btn wide" id="handGo" onclick="submitHand()">こたえる</button></div>
+    <div class="small-note" id="handNote"></div>
+    <div class="row">
+      <button class="btn gray" onclick="showHintHand()">💡 ヒント</button>
+      <button class="btn gray" onclick="giveUp()">🤔 わからない</button>
+    </div>`;
+  setupPad(document.getElementById("pad"), answerKind(q.a).len);
+}
+function setupPad(cv, boxes){
+  const rect = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = rect.width*dpr; cv.height = rect.height*dpr;
+  const ctx = cv.getContext("2d"); ctx.scale(dpr,dpr);
+  pad = {cv, ctx, w:rect.width, h:rect.height, boxes:Math.max(1,Math.min(boxes,10)), strokes:[], cur:null, hint:""};
+  const pos = e=>{ const r = cv.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; };
+  cv.onpointerdown = e=>{ if(Q.locked) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); const [x,y]=pos(e); pad.cur=[[x],[y],[Date.now()]]; drawPad(); };
+  cv.onpointermove = e=>{ if(!pad.cur) return; e.preventDefault(); const [x,y]=pos(e); pad.cur[0].push(x); pad.cur[1].push(y); pad.cur[2].push(Date.now()); drawPad(); };
+  const end = ()=>{ if(pad.cur){ if(pad.cur[0].length===1){ pad.cur[0].push(pad.cur[0][0]+1); pad.cur[1].push(pad.cur[1][0]+1); pad.cur[2].push(Date.now()); } pad.strokes.push(pad.cur); pad.cur=null; drawPad(); } };
+  cv.onpointerup = end; cv.onpointercancel = end;
+  drawPad();
+}
+function drawPad(){
+  const {ctx,w,h,boxes} = pad;
+  ctx.clearRect(0,0,w,h);
+  // 書く場所の目安の四角
+  const size = Math.min(w/boxes - 8, h - 30);
+  const startX = (w - (size+8)*boxes + 8)/2, y0 = (h-size)/2;
+  ctx.setLineDash([6,6]); ctx.strokeStyle="#d5dbc0"; ctx.lineWidth=2;
+  ctx.font = `${size*.8}px "M PLUS Rounded 1c", sans-serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(let i=0;i<boxes;i++){
+    const x = startX + i*(size+8);
+    ctx.strokeRect(x, y0, size, size);
+    if(i===0 && pad.hint){ ctx.fillStyle="rgba(92,191,42,.18)"; ctx.fillText(pad.hint, x+size/2, y0+size/2+2); }
+  }
+  ctx.setLineDash([]);
+  ctx.strokeStyle="#333"; ctx.lineWidth=7; ctx.lineCap="round"; ctx.lineJoin="round";
+  for(const s of [...pad.strokes, ...(pad.cur?[pad.cur]:[])]){
+    ctx.beginPath(); ctx.moveTo(s[0][0], s[1][0]);
+    for(let i=1;i<s[0].length;i++) ctx.lineTo(s[0][i], s[1][i]);
+    ctx.stroke();
+  }
+}
+function padUndo(){ if(pad && !Q.locked){ pad.strokes.pop(); drawPad(); } }
+function padClear(){ if(pad && !Q.locked){ pad.strokes=[]; drawPad(); } }
+function showHintHand(){ pad.hint = [...Q.current.q.a.replace(/・/g,"")][0]; drawPad(); teacherMood("happy"); speak("うすく出したから、なぞってみてね"); }
+
+// Googleの手書き文字認識に「線の座標」だけを送って、読み取り候補をもらう
+async function recognizeInk(strokes, w, h){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 8000);
+  try{
+    const res = await fetch("https://inputtools.google.com/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8", {
+      method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal,
+      body: JSON.stringify({options:"enable_pre_space", requests:[{
+        writing_guide:{writing_area_width:Math.round(w), writing_area_height:Math.round(h)},
+        ink: strokes.map(s=>[s[0].map(Math.round), s[1].map(Math.round), s[2]]),
+        language:"ja", max_num_results:10
+      }]})
+    });
+    const data = await res.json();
+    if(data[0] !== "SUCCESS") throw new Error("NG");
+    return data[1][0][1] || [];
+  } finally { clearTimeout(timer); }
+}
+async function submitHand(){
+  if(Q.locked) return;
+  if(!pad.strokes.length){ teacherMood(null,"shake"); return; }
+  const go = document.getElementById("handGo"), note = document.getElementById("handNote");
+  go.disabled = true; note.textContent = "よみとり中…";
+  try{
+    const cands = await recognizeInk(pad.strokes, pad.w, pad.h);
+    note.textContent = "";
+    const hit = cands.find(c=>isCorrect(Q.current.q, c));
+    judge(!!hit, hit || cands[0] || "", {hand:true});
+  }catch(e){
+    // 読み取りができなかったときは、自分で丸つけ
+    selfGrade();
+  }
+}
+function selfGrade(){
+  const q = Q.current.q;
+  Q.locked = true;
+  showFeedback("bad", `<div class="fb-title" style="color:#555">📝 自分で丸つけしてね</div>
+    <div class="fb-ans">こたえ：<b>${esc(q.a)}</b>${q.y && q.y!==q.a?`（${esc(q.y)}）`:""}</div>
+    <div class="fb-exp">字のよみとりができなかったよ（インターネットにつながっているか確認してね）。書いた字は合ってた？</div>
+    <div class="row"><button class="btn" onclick="selfAnswer(true)">⭕ あってた</button><button class="btn red" onclick="selfAnswer(false)">❌ ちがった</button></div>`);
+}
+function selfAnswer(ok){ Q.locked=false; hideFeedback(); judge(ok, ""); }
+
+/* --- 正解・不正解の判定 --- */
+function judge(ok, userText="", opt={}){
+  if(Q.locked) return;
+  Q.locked = true;
+  stopListening();
+  const {q, retry} = Q.current;
+  const ansLine = `<div class="fb-ans">こたえ：<b>${esc(q.a)}</b>${q.y && q.y!==q.a && !/^\d+$/.test(q.a)?`（${esc(q.y)}）`:""}</div>`;
+  if(ok){
+    Q.cleared++; Q.combo++;
+    if(!retry) Q.firstTry++;
+    let gain = 10 + (Q.combo>=3 ? 5 : 0);
+    Q.xp += gain;
+    SFX.correct();
+    if(Q.combo>=3 && Q.combo%3===0) setTimeout(()=>SFX.combo(), 300);
+    xpPop("+"+gain);
+    teacherMood("happy","jump");
+    const line = Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
+    speak(line);
+    showFeedback("good", `<div class="fb-title">⭕ ${line}</div>
+      ${userText && opt.hand ? `<div class="fb-exp">よみとった字：「${esc(userText)}」</div>`:""}
+      <div class="fb-exp">${esc(q.e||"")}</div>
+      <button class="btn wide" onclick="afterAnswer()">つぎへ</button>`);
+  }else{
+    Q.hearts--; Q.combo = 0;
+    Q.queue.push({q, retry:true});      // まちがえた問題はあとでもう一回
+    if(!Q.missed.includes(q)) Q.missed.push(q);
+    SFX.wrong();
+    teacherMood("sad","shake");
+    const line = pick(LINES.wrong);
+    speak(`${line}。こたえは、${q.y && !/^\d+$/.test(q.a) ? q.y : q.a}、だよ`);
+    const heard = userText ? `<div class="fb-exp">${opt.hand?"よみとった字":"あなたの答え"}：「${esc(userText)}」</div>` : "";
+    showFeedback("bad", `<div class="fb-title">❌ ${line}</div>${ansLine}${heard}
+      <div class="fb-exp">${esc(q.e||"")}</div>
+      ${opt.hand ? `<div class="row"><button class="btn gray" onclick="overrideHand()">✍️ 字はあってた！</button><button class="btn red" onclick="afterAnswer()">つぎへ</button></div>`
+                 : `<button class="btn red wide" onclick="afterAnswer()">つぎへ</button>`}`);
+  }
+  const hb = document.querySelector(".hearts"); if(hb) hb.innerHTML = heartsHTML();
+  const bar = document.querySelector(".bar>div"); if(bar) bar.style.width = (Q.cleared/Q.total*100)+"%";
+  const cb = document.getElementById("combo"); if(cb) cb.textContent = Q.combo>=3 ? `🔥 ${Q.combo}れんぞく！` : "";
+}
+// 手書きの読み取りまちがいのときに「正解」にもどす
+function overrideHand(){
+  const {q} = Q.current;
+  Q.queue.pop(); Q.hearts++; Q.cleared++;
+  const i = Q.missed.indexOf(q); if(i>=0) Q.missed.splice(i,1);
+  if(!Q.current.retry) Q.firstTry++;
+  Q.xp += 10; SFX.correct(); xpPop("+10"); teacherMood("happy","jump"); speak("ごめんね、ちゃんと書けてたね！");
+  afterAnswer();
+}
+function afterAnswer(){
+  if(Q.hearts <= 0) return showFail();
+  if(!Q.queue.length) return showClear();
+  nextQuestion();
+}
+let fbRaf = 0;
+function showFeedback(kind, html){
+  const f = document.getElementById("feedback");
+  f.className = "feedback " + kind;
+  document.getElementById("fbInner").innerHTML = html;
+  cancelAnimationFrame(fbRaf);
+  fbRaf = requestAnimationFrame(()=>f.classList.add("show"));
+}
+function hideFeedback(){ cancelAnimationFrame(fbRaf); document.getElementById("feedback").classList.remove("show"); }
+function xpPop(text){
+  const s = document.createElement("div");
+  s.className = "xp-pop"; s.textContent = text + " 💎";
+  s.style.left = (window.innerWidth/2 - 40) + "px"; s.style.top = (window.innerHeight*0.38) + "px";
+  document.body.appendChild(s); setTimeout(()=>s.remove(), 1000);
+}
+function quitStage(){
+  if(!confirm("とちゅうでやめる？（このステージの記録は残りません）")) return;
+  stopListening(); hideFeedback(); speechSynthesis && speechSynthesis.cancel();
+  show("home"); renderHome();
+}
+
+/* =========================================================
+   結果画面
+   ========================================================= */
+function updateStreak(){
+  const d = new Date(); const today = d.toDateString();
+  const y = new Date(d - 86400000).toDateString();
+  if(save.streak.last === today) return;
+  save.streak.count = save.streak.last === y ? save.streak.count + 1 : 1;
+  save.streak.last = today;
+}
+function missedHTML(){
+  if(!Q.missed.length) return "";
+  return `<div class="missed"><h3>📒 まちがえた言葉をおさらい</h3><ul>${
+    Q.missed.map(q=>`<li><b>${esc(q.a)}</b>${q.y&&q.y!==q.a&&!/^\d+$/.test(q.a)?`（${esc(q.y)}）`:""}… ${esc(plain(q.q))}</li>`).join("")
+  }</ul></div>`;
+}
+function showClear(){
+  hideFeedback();
+  const got = MODES[Q.mode].stars;
+  const k = key(Q.ch.id, Q.si);
+  const prev = save.stars[k] || 0;
+  save.stars[k] = Math.max(prev, got);
+  save.xp += Q.xp;
+  updateStreak();
+  persist();
+  const acc = Math.round(Q.firstTry / Q.total * 100);
+  const el = document.getElementById("result");
+  el.className = "screen result";
+  el.innerHTML = `
+    <div style="display:flex;justify-content:center">${teacherBox()}</div>
+    <h1>${Q.boss?"👑 まとめテスト":"ステージ"}クリア！</h1>
+    <div style="font-size:18px">${esc(Q.title)}（${MODES[Q.mode].icon} ${MODES[Q.mode].name}）</div>
+    <div class="big-stars">${[0,1,2].map(i=>`<span data-i="${i}">⭐</span>`).join("")}</div>
+    ${got<3?`<div class="small-note">${got<2?"キーボードか音声なら★2つ、":""}手書きなら★3つもらえるよ！</div>`:""}
+    <div class="res-cards">
+      <div class="res-card">💎 けいけんち<b>+${Q.xp}</b></div>
+      <div class="res-card">🎯 1回で正解<b>${acc}%</b></div>
+      <div class="res-card">🔥 れんぞく<b>${save.streak.count}日</b></div>
+    </div>
+    ${missedHTML()}
+    <div class="row"><button class="btn wide" onclick="goHome()">ホームへもどる</button></div>`;
+  show("result");
+  teacherMood("happy","jump");
+  SFX.clear(); confetti();
+  speak(pick(LINES.clear));
+  for(let i=0;i<got;i++) setTimeout(()=>{ el.querySelector(`.big-stars span[data-i="${i}"]`).classList.add("got"); SFX.star(); }, 700 + i*450);
+}
+function showFail(){
+  hideFeedback();
+  const el = document.getElementById("result");
+  el.className = "screen result fail";
+  el.innerHTML = `
+    <div style="display:flex;justify-content:center">${teacherBox()}</div>
+    <h1>ざんねん…</h1>
+    <div style="font-size:19px">${LINES.fail[0]}</div>
+    ${missedHTML()}
+    <div class="row">
+      <button class="btn gray" onclick="goHome()">ホームへ</button>
+      <button class="btn" onclick="startStage(${Q.ch.id},${Q.si},'${Q.mode}')">もう一回！</button>
+    </div>`;
+  show("result");
+  teacherMood("sad","shake");
+  SFX.fail(); speak(LINES.fail[0]);
+}
+function goHome(){ hideFeedback(); show("home"); renderHome(); }
+
+function confetti(){
+  const colors = ["#ff5a5a","#ffc83d","#5cbf2a","#3fa9f5","#b36bff","#ff8ad8"];
+  for(let i=0;i<90;i++){
+    const d = document.createElement("div");
+    d.className = "cf";
+    d.style.left = Math.random()*100 + "vw";
+    d.style.background = colors[i%colors.length];
+    d.style.animationDuration = (2.2 + Math.random()*2) + "s";
+    d.style.animationDelay = (Math.random()*0.6) + "s";
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 5200);
+  }
+}
+
+renderHome();
+</script>
+</body>
+</html>
