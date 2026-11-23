@@ -30,18 +30,30 @@ ruby rt{font-size:.5em;font-weight:700;color:#888}
 
 /* ===== ぷにっと押せるボタン ===== */
 .btn{
+  --b1:#86e255; --b2:#4fb51f; --b3:#3a8c12;   /* 上の色・下の色・影の色 */
+  position:relative;overflow:hidden;
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:14px 22px;border-radius:18px;font-size:20px;color:#fff;
-  background:var(--green);box-shadow:0 5px 0 var(--green-d);
+  padding:15px 22px;border-radius:22px;font-size:20px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.18);
+  background:linear-gradient(180deg,var(--b1),var(--b2));
+  box-shadow:0 7px 0 var(--b3), 0 12px 16px rgba(40,60,10,.22);
   transition:transform .08s, box-shadow .08s;
 }
-.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--green-d)}
-.btn.blue{background:var(--blue);box-shadow:0 5px 0 #2a86c9}
-.btn.gray{background:#fff;color:var(--ink);box-shadow:0 5px 0 #cfd4bd;border:2px solid #dfe3cf}
-.btn.red{background:var(--red);box-shadow:0 5px 0 var(--red-d)}
-.btn.gold{background:var(--gold);color:#6b4b00;box-shadow:0 5px 0 #d9a21a}
-.btn:disabled{opacity:.45;pointer-events:none}
+/* 上半分のつやつやした光 */
+.btn::before{content:"";position:absolute;left:12px;right:12px;top:5px;height:42%;border-radius:16px;
+  background:linear-gradient(rgba(255,255,255,.65),rgba(255,255,255,.05));pointer-events:none}
+.btn:active{transform:translateY(6px);box-shadow:0 1px 0 var(--b3), 0 3px 5px rgba(40,60,10,.25)}
+.btn.blue{--b1:#74c8ff;--b2:#2f9be8;--b3:#1d6fae}
+.btn.red{--b1:#ff8a8a;--b2:#f04c4c;--b3:#b83131}
+.btn.gold{--b1:#ffe27a;--b2:#ffbf1f;--b3:#c98b00;color:#6b4300;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.btn.gray{--b1:#ffffff;--b2:#eef1e2;--b3:#c6cbb3;color:var(--ink);text-shadow:none}
+.btn:disabled{opacity:.45;pointer-events:none;filter:grayscale(.4)}
 .btn.wide{width:100%}
+/* はなした時の「ぷるん」 */
+.jelly{animation:jelly .38s ease !important}
+@keyframes jelly{0%{transform:scale(1)}30%{transform:scale(1.07,.92)}60%{transform:scale(.97,1.04)}100%{transform:scale(1)}}
+/* キラッと光が走る（ガチャが回せる時など） */
+.btn.shine::after{content:"";position:absolute;top:0;bottom:0;width:40px;left:-60px;background:rgba(255,255,255,.6);transform:skewX(-20deg);animation:shine 2.2s infinite}
+@keyframes shine{0%{left:-60px}60%,100%{left:110%}}
 
 /* ===== 上のバー（スコア表示） ===== */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
@@ -50,7 +62,7 @@ ruby rt{font-size:.5em;font-weight:700;color:#888}
 .stat{background:#fff;border-radius:14px;padding:6px 12px;font-size:17px;box-shadow:0 3px 0 #d8ddc4}
 .icon-btn{background:#fff;border-radius:14px;width:42px;height:42px;font-size:20px;box-shadow:0 3px 0 #d8ddc4}
 
-/* ===== 先生（もち先生） ===== */
+/* ===== 先生（みるく先生） ===== */
 .teacher-row{display:flex;align-items:flex-end;gap:10px;margin:8px 0 18px}
 .teacher{flex:0 0 auto;width:130px}
 .teacher.sm{width:96px}
@@ -201,6 +213,117 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 .cf{position:fixed;top:-14px;width:10px;height:14px;z-index:99;pointer-events:none;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(112vh) rotate(760deg)}}
 
+/* ===== 立体的な選択肢・カード・ステージ ===== */
+.choice,.mode{position:relative;overflow:hidden;background:linear-gradient(180deg,#fff,#f2f5e8);
+  box-shadow:0 7px 0 #cdd3b8,0 12px 14px rgba(40,60,10,.12)}
+.choice::before,.mode::before{content:"";position:absolute;left:10px;right:10px;top:4px;height:38%;border-radius:14px;
+  background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0));pointer-events:none}
+.choice:active,.mode:active{transform:translateY(6px);box-shadow:0 1px 0 #cdd3b8}
+.node{background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.6),rgba(255,255,255,0) 42%),var(--c);
+  box-shadow:0 8px 0 rgba(0,0,0,.22),0 14px 16px rgba(0,0,0,.15),inset 0 -6px 0 rgba(0,0,0,.12)}
+.node:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.22)}
+/* おぼえた度のリング */
+.ring{width:102px;height:102px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(#ffc83d calc(var(--p)*1%),#e9ecdb 0)}
+.ring.boss{width:120px;height:120px}
+.node-sub{font-size:12px;color:var(--sub)}
+
+/* ===== ホームのガチャ・復習カード ===== */
+.hub{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 20px}
+.hub-card{background:#fff;border-radius:22px;padding:14px;box-shadow:0 5px 0 #d8ddc4;display:flex;flex-direction:column;gap:8px}
+.hub-title{font-size:18px}
+.hub-sub{font-size:13px;color:var(--sub)}
+.hub-btns{display:flex;gap:8px}
+.hub-card .btn{flex:1;font-size:17px;padding:12px 8px}
+.gauge{display:flex;gap:6px}
+.gauge span{flex:1;height:22px;border-radius:11px;background:#e6e9d6;box-shadow:inset 0 2px 3px rgba(0,0,0,.12)}
+.gauge span.on{background:linear-gradient(#ffe27a,#ffb703);box-shadow:inset 0 -3px 0 rgba(0,0,0,.1)}
+.gauge span.pop{animation:starpop .5s ease}
+.gauge.full span{animation:glow .6s ease-in-out infinite alternate}
+@keyframes glow{to{filter:brightness(1.3)}}
+.gauge.big span{height:30px;border-radius:15px}
+.mastered-badge{display:inline-block;background:#fff3c4;color:#a06a00;border-radius:12px;padding:4px 12px;font-size:17px;margin:4px 0}
+.m-meter{font-size:15px;color:#666;margin:2px 0 6px}
+.m-meter b{color:#ffb703;letter-spacing:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.chip{background:#fff3c4;border-radius:12px;padding:4px 10px;font-size:15px}
+.res-box{background:#fff;border-radius:18px;padding:12px 16px;margin:14px 0;box-shadow:0 4px 0 #d8ddc4}
+
+/* ===== ガチャガチャ ===== */
+.g-title{flex:1;text-align:center;font-size:22px}
+.gacha-stage{position:relative;height:470px;display:flex;justify-content:center;margin-top:6px}
+.machine{position:relative;width:250px;transition:opacity .3s}
+.machine.dim{opacity:.12}
+.machine.shake{animation:mshake .25s ease 4}
+@keyframes mshake{0%,100%{transform:none}25%{transform:rotate(-2deg)}75%{transform:rotate(2deg)}}
+.dome{position:relative;width:230px;height:230px;margin:0 auto -26px;border-radius:50%;overflow:hidden;z-index:1;
+  background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.95),rgba(255,255,255,.3) 28%,rgba(200,235,255,.45) 72%);
+  border:8px solid #fff;box-shadow:inset 0 -10px 20px rgba(0,0,0,.08),0 6px 0 #d6dcc4}
+.cap-mini{position:absolute;width:46px;height:46px;border-radius:50%;background:linear-gradient(180deg,var(--cc) 50%,#fff 50%);border:3px solid rgba(0,0,0,.08)}
+.machine.shake .cap-mini{animation:jiggle .12s infinite alternate}
+@keyframes jiggle{to{transform:translate(4px,-7px) rotate(25deg)}}
+.mbody{position:relative;z-index:2;height:190px;border-radius:26px 26px 18px 18px;
+  background:linear-gradient(180deg,#ff9cbb,#f0567f);box-shadow:0 8px 0 #c23c62,inset 0 6px 0 rgba(255,255,255,.35)}
+.mlabel{position:absolute;left:18px;top:24px;color:#fff;font-size:19px;line-height:1.25;text-shadow:0 2px 0 rgba(0,0,0,.15)}
+.handle{position:absolute;right:24px;top:24px;width:90px;height:90px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#e4e4e4);box-shadow:0 7px 0 #b3b3b3,0 12px 14px rgba(0,0,0,.2)}
+.handle span{position:absolute;left:50%;top:50%;width:70px;height:18px;margin:-9px 0 0 -35px;border-radius:9px;
+  background:linear-gradient(#ffd34d,#f2a900);box-shadow:0 3px 0 #c98b00}
+.handle.turn span{animation:turn 1s ease-in-out}
+@keyframes turn{to{transform:rotate(360deg)}}
+.handle:active{transform:translateY(5px);box-shadow:0 2px 0 #b3b3b3}
+.handle:disabled{opacity:.55}
+.tap-here{position:absolute;right:30px;top:-8px;background:#fff;color:#f0567f;border-radius:10px;padding:2px 8px;font-size:13px;animation:bob .8s ease-in-out infinite alternate;z-index:3}
+.chute{position:absolute;left:50%;bottom:18px;width:84px;height:58px;margin-left:-42px;border-radius:14px 14px 8px 8px;
+  background:#5a2236;box-shadow:inset 0 8px 12px rgba(0,0,0,.55)}
+.capsule{position:absolute;left:50%;top:330px;width:110px;height:110px;margin-left:-55px;display:none;z-index:5;cursor:pointer}
+.capsule.drop{display:block;animation:drop 1.1s cubic-bezier(.3,1.3,.5,1) forwards}
+@keyframes drop{0%{transform:translateY(-20px) scale(.35);opacity:0}25%{opacity:1;transform:translateY(25px) scale(.45)}45%{transform:translateY(5px) scale(.5)}60%{transform:translateY(25px) scale(.5)}100%{transform:translateY(-160px) scale(1.5)}}
+.capsule.ready{display:block;transform:translateY(-160px) scale(1.5)}
+.capsule .ctop,.capsule .cbot{position:absolute;left:0;width:110px;height:55px;transition:transform .45s ease,opacity .45s}
+.capsule .ctop{top:0;border-radius:55px 55px 0 0;background:var(--cc);box-shadow:inset 0 8px 0 rgba(255,255,255,.45)}
+.capsule .cbot{bottom:0;border-radius:0 0 55px 55px;background:rgba(255,255,255,.95);border-top:4px solid rgba(0,0,0,.08)}
+.capsule.ready .ctop{animation:wobble .7s ease-in-out infinite}
+@keyframes wobble{50%{transform:rotate(-7deg) translateY(-3px)}}
+.capsule.open .ctop{animation:none;transform:translate(-30px,-80px) rotate(-40deg);opacity:0}
+.capsule.open .cbot{transform:translate(30px,80px) rotate(30deg);opacity:0}
+.flash{position:fixed;inset:0;background:#fff;z-index:70;pointer-events:none;animation:flash .6s ease forwards}
+@keyframes flash{from{opacity:.95}to{opacity:0}}
+.reveal{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:6}
+.reveal.show{display:flex;animation:fadein .3s}
+@keyframes fadein{from{opacity:0}}
+.rays{position:absolute;top:50%;left:50%;width:460px;height:460px;margin:-260px 0 0 -230px;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,205,60,.5) 0 10deg,rgba(255,255,255,0) 10deg 20deg);animation:spin 9s linear infinite;
+  -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%)}
+.rays.SR{background:repeating-conic-gradient(rgba(255,90,90,.45) 0 8deg,rgba(255,200,60,.45) 8deg 16deg,rgba(90,190,255,.45) 16deg 24deg,rgba(180,110,255,.45) 24deg 32deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.reveal .stk{width:220px;animation:starpop .6s ease;z-index:1}
+.rv-name{z-index:1;font-size:28px;margin-top:12px}
+.rv-rar{z-index:1;font-size:18px;color:#c98b00}
+.rv-new{z-index:1;background:#ff5a5a;color:#fff;border-radius:12px;padding:2px 12px;font-size:16px;margin-top:4px;animation:pulse 1s infinite}
+
+/* ===== シール ===== */
+.stk{position:relative;border-radius:50%;background:var(--bg);border:6px solid #fff;aspect-ratio:1/1;overflow:hidden;
+  box-shadow:0 4px 0 rgba(0,0,0,.1),0 8px 14px rgba(0,0,0,.15)}
+.stk svg{display:block;width:100%;height:100%}
+.stk.r-R::after,.stk.r-SR::after{content:"";position:absolute;inset:-20%;pointer-events:none;
+  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.75) 50%,transparent 60%);animation:gloss 2.6s infinite}
+@keyframes gloss{0%{transform:translateX(-60%)}60%,100%{transform:translateX(60%)}}
+.stk.r-SR{border-color:transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,
+  conic-gradient(#ff5a5a,#ffc83d,#5cbf2a,#3fa9f5,#b36bff,#ff5a5a) border-box}
+.stk.locked{background:#eceee3;border-color:#fff}
+.stk.locked svg{filter:brightness(0);opacity:.12}
+.book-prog{height:18px;border-radius:9px;background:#e1e5cf;overflow:hidden;margin:6px 0 10px}
+.book-prog div{height:100%;background:linear-gradient(#ffe27a,#ffb703)}
+.rar-label{font-size:17px;margin:18px 0 10px}
+.book-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stk-cell{background:none;padding:0;text-align:center;color:var(--ink);position:relative}
+.stk-cell:active{transform:scale(.95)}
+.stk-name{font-size:13px;margin-top:6px}
+.stk-count{position:absolute;top:-4px;right:-4px;background:#ff5a5a;color:#fff;border-radius:12px;padding:1px 8px;font-size:13px;z-index:2}
+.big-stk{width:230px;margin:6px auto 10px}
+
+@media (max-width:560px){ .hub{grid-template-columns:1fr} .book-grid{grid-template-columns:repeat(3,1fr)} }
 @media (max-width:520px){
   .q-text{font-size:19px}.choice{font-size:18px}.teacher{width:100px}.teacher.sm{width:76px}
   .bubble{font-size:16px}.ch-title{font-size:20px}
@@ -223,6 +346,10 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 <div id="quiz" class="screen"></div>
 <!-- 結果画面 -->
 <div id="result" class="screen"></div>
+<!-- ガチャ画面 -->
+<div id="gacha" class="screen"></div>
+<!-- シール帳 -->
+<div id="book" class="screen"></div>
 
 <div id="modal" class="modal"><div class="sheet" id="sheet"></div></div>
 <div id="feedback" class="feedback"><div class="inner" id="fbInner"></div></div>
@@ -233,7 +360,7 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
    れきしクエスト
    ・ここを変えると先生の名前が変わります
    ========================================================= */
-const TEACHER_NAME = "もち先生";
+const TEACHER_NAME = "みるく先生";
 
 /* =========================================================
    問題データ
@@ -445,7 +572,14 @@ const pick = a => a[Math.floor(Math.random()*a.length)];
    保存（進み具合をこの端末に保存）
    ========================================================= */
 const SAVE_KEY = "rekishi-quest-v1";
-function defaultSave(){ return {stars:{}, xp:0, streak:{last:null,count:0}, settings:{sfx:true, voice:true, autoRead:false}}; }
+function defaultSave(){
+  return {stars:{}, xp:0, streak:{last:null,count:0}, settings:{sfx:true, voice:true, autoRead:false},
+          mastery:{},   // 問題ごとの連続正解数（3で「おぼえた！」）
+          wrong:{},     // 一度でもまちがえた問題
+          gauge:0,      // ガチャゲージ（3でガチャ1回）
+          tickets:0,    // まわせるガチャの回数
+          stickers:{}}; // 持っているシールと枚数
+}
 function loadSave(){
   try{
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -556,7 +690,7 @@ function answerKind(a){
 const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
 
 /* =========================================================
-   もち先生のイラスト
+   みるく先生のイラスト
    ========================================================= */
 function teacherSVG(){
   return `
@@ -596,19 +730,208 @@ function teacherMood(mood, anim){
 }
 
 /* =========================================================
+   おぼえた度（3回連続で正解したら「おぼえた！」）
+   ========================================================= */
+CHAPTERS.forEach(ch=>ch.stages.forEach((s,si)=>s.qs.forEach((q,i)=>{ q.id = `${ch.id}-${si}-${i}`; })));
+const ALL_QS = CHAPTERS.flatMap(ch=>ch.stages.flatMap(s=>s.qs));
+const MASTER = 3;
+const masteryOf  = q => save.mastery[q.id] || 0;
+const isMastered = q => masteryOf(q) >= MASTER;
+const stagePool  = (ch, si) => si===5 ? ch.stages.flatMap(s=>s.qs) : ch.stages[si].qs;
+const weakList   = () => ALL_QS.filter(q=>save.wrong[q.id] && !isMastered(q));
+// まだおぼえていない問題を優先して選ぶ（少しだけランダムをまぜる）
+function pickQuestions(pool, n){
+  const picked = pool.map(q=>({q, k:Math.min(masteryOf(q),MASTER) + Math.random()*0.9}))
+                     .sort((a,b)=>a.k-b.k).slice(0,n).map(x=>x.q);
+  return shuffle(picked);
+}
+
+/* 効果音を追加 */
+Object.assign(SFX, {
+  ratchet(){ for(let i=0;i<7;i++) tone(1300-i*40, i*.13, .05, "square", .07); },
+  thud(){ tone(200,0,.22,"sine",.4,70); },
+  gauge(){ tone(880,0,.1,"triangle",.22); tone(1320,.08,.2,"triangle",.22); },
+  ticket(){ [784,1046,1318,1568].forEach((f,i)=>tone(f,i*.08,.2,"sine",.2)); },
+  revealN(){ [784,1046,1318].forEach((f,i)=>tone(f,i*.1,.28,"triangle",.24)); },
+  revealR(){ [659,784,988,1318,1568].forEach((f,i)=>tone(f,i*.09,.32,"triangle",.24)); tone(2093,.5,.5,"sine",.12); },
+  revealSR(){ [523,659,784,1046,1318,1568,2093].forEach((f,i)=>tone(f,i*.09,.35,"triangle",.24)); [1046,1318,1568].forEach(f=>tone(f,.75,1.3,"sine",.1)); },
+});
+// ボタンをはなしたら「ぷるん」とゆれる
+document.addEventListener("pointerup", e=>{
+  const b = e.target.closest(".btn,.choice,.mode,.node,.icon-btn");
+  if(!b || b.disabled) return;
+  b.classList.remove("jelly"); void b.offsetWidth; b.classList.add("jelly");
+  setTimeout(()=>b.classList.remove("jelly"), 400);
+}, true);
+
+/* =========================================================
+   みるく先生の仮装シール（24種類）
+   back: 体のうしろ / body: 服 / legs: はかま等の色
+   face: 顔の上（目の下） / top: いちばん上（ぼうし・小物）
+   ========================================================= */
+const RARITY = {
+  N: {name:"ふつう",       stars:"★",   weight:70},
+  R: {name:"レア",         stars:"★★",  weight:25},
+  SR:{name:"スーパーレア", stars:"★★★", weight:5},
+};
+const cloth = c => `<ellipse cx="112" cy="146" rx="58" ry="36" fill="${c}"/>`;
+const MAGE  = `<ellipse cx="98" cy="25" rx="34" ry="11" fill="#d6e4ec"/><rect x="85" y="4" width="28" height="11" rx="5.5" fill="#2b2b2b"/>`;
+const KATANA= `<g transform="rotate(40 160 120)"><rect x="156" y="56" width="8" height="124" rx="3" fill="#3a3a3a"/><rect x="149" y="128" width="22" height="6" rx="2" fill="#c9a227"/></g>`;
+const WINGS = c => `<path d="M12 136 L64 150 L60 178 L18 170Z M184 136 L132 150 L136 178 L178 170Z" fill="${c}"/>`;
+const FAN   = (c1,c2) => `<path d="M160 188 L134 146 Q160 128 188 146Z" fill="${c1}" stroke="${c2}" stroke-width="2.5" stroke-linejoin="round"/><path d="M160 188 L148 140 M160 188 L160 134 M160 188 L173 140" stroke="${c2}" stroke-width="1.5"/>`;
+const BEADS = [0,1,2,3,4].map(i=>`<circle cx="${10+i*9}" cy="8" r="3.6" fill="#e3bf8f"/><circle cx="${10+i*9}" cy="22" r="3.6" fill="#e3bf8f"/>`).join("");
+const DOTS  = (pts, c) => pts.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r||4}" fill="${c}"/>`).join("");
+const STAR  = (x,y,s,c) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 -10 L3 -3 L10 -3 L4 2 L6 10 L0 5 L-6 10 L-4 2 L-10 -3 L-3 -3Z" fill="${c}"/>`;
+
+const STICKERS = [
+  {id:"samurai", name:"さむらい", r:"N", bg:"#dbe8ff",
+   desc:"武士は刀を差すことができたよ。江戸時代には「名字帯刀」という特権があったんだ。",
+   back:KATANA, body:cloth("#34508f"), legs:"#7d8597", top:MAGE},
+  {id:"ninja", name:"にんじゃ", r:"N", bg:"#e3e0f2",
+   desc:"忍者は、戦国大名のために敵のようすをさぐったといわれているよ。",
+   body:cloth("#2f3140"), legs:"#2f3140",
+   face:`<ellipse cx="98" cy="86" rx="82" ry="72" fill="#2f3140"/><ellipse cx="94" cy="108" rx="42" ry="15" fill="#fffbea"/>`,
+   top:`<path d="M166 50 l32 -14 l-8 17z M168 60 l30 10 l-15 9z" fill="#2f3140"/><g transform="translate(174 160)"><path d="M0 -17 L4 -4 L17 0 L4 4 L0 17 L-4 4 L-17 0 L-4 -4Z" fill="#a3acb6" stroke="#6b737c" stroke-width="2"/><circle r="3" fill="#555"/></g>`},
+  {id:"nobunaga", name:"のぶながさま", r:"R", bg:"#ffe0d6",
+   desc:"織田信長は、楽市・楽座を行い、安土城を築いたよ。南蛮のマントを着ていたという話もあるんだ。",
+   back:`<path d="M34 118 Q112 64 190 118 L198 190 L26 190Z" fill="#c0392b"/>`, body:cloth("#2b2b2b"), legs:"#5a4a3a",
+   top:`<path d="M22 72 Q98 -22 174 72 Q98 46 22 72Z" fill="#3a3a3a"/><path d="M98 32 L58 -22 L74 -20 L98 16 L122 -20 L138 -22Z" fill="#f2c230" stroke="#c99a14" stroke-width="2"/><circle cx="98" cy="30" r="7" fill="#f2c230"/>`},
+  {id:"nanban", name:"なんばんじん", r:"N", bg:"#fde9c8",
+   desc:"南蛮人はポルトガル人やスペイン人のこと。首のまわりのフリフリは「ひだえり」というよ。",
+   body:cloth("#8e2b2b"), legs:"#3b2a20",
+   top:`<ellipse cx="100" cy="152" rx="64" ry="14" fill="#fff" stroke="#d9d9d9" stroke-width="4" stroke-dasharray="7 4"/><ellipse cx="98" cy="22" rx="64" ry="11" fill="#2b2b2b"/><path d="M68 22 L74 -28 H122 L128 22Z" fill="#2b2b2b"/><rect x="71" y="6" width="54" height="8" fill="#b03a2e"/>`},
+  {id:"missionary", name:"せんきょうし", r:"N", bg:"#e9f1e3",
+   desc:"宣教師はキリスト教を広めるために日本に来たよ。最初に来たのはフランシスコ・ザビエル（1549年）。",
+   body:cloth("#222"), legs:"#222",
+   top:`<ellipse cx="98" cy="17" rx="24" ry="8" fill="#222"/><path d="M76 120 Q100 142 124 120" stroke="#e6b422" stroke-width="2.5" fill="none"/><path d="M97 134 h6 v8 h8 v6 h-8 v14 h-6 v-14 h-8 v-6 h8z" fill="#e6b422" stroke="#b8860b" stroke-width="1"/>`},
+  {id:"hime", name:"おひめさま", r:"R", bg:"#ffe3ef", eyes:"happy",
+   desc:"お姫様は大名の娘。参勤交代の決まりで、大名の妻や子どもは江戸に住んでいたよ。",
+   back:`<path d="M18 92 Q8 172 40 192 L160 192 Q192 172 180 92Z" fill="#2b2b2b"/>`,
+   body:cloth("#d63a5e")+DOTS([[148,158],[162,142,3],[138,172,3],[160,170]],"#fff"), legs:"#a8203f",
+   top:`<path d="M18 84 Q16 8 98 10 Q180 8 178 84 Q160 44 98 46 Q36 44 18 84Z" fill="#2b2b2b"/><path d="M150 34 L166 60" stroke="#d4a017" stroke-width="3"/><g transform="translate(148 28)">${[0,72,144,216,288].map(a=>`<circle cx="${Math.cos(a*Math.PI/180)*8}" cy="${Math.sin(a*Math.PI/180)*8}" r="6" fill="#ff7aa8"/>`).join("")}<circle r="5" fill="#ffd34d"/></g>`},
+  {id:"rikyu", name:"ちゃじん", r:"N", bg:"#e4f0d8",
+   desc:"千利休は茶の湯を茶道として大成したよ。緑色の抹茶を、茶わんで飲むんだ。",
+   body:cloth("#3b3127"), legs:"#3b3127",
+   top:`<path d="M40 40 Q98 -10 156 40 Q98 28 40 40Z" fill="#2b2b2b"/><path d="M14 152 h56 q-4 32 -28 32 q-24 0 -28 -32z" fill="#4a3b2f"/><ellipse cx="42" cy="152" rx="28" ry="7" fill="#7fb34a"/>`},
+  {id:"kabuki", name:"かぶき", r:"SR", bg:"#ffe9a8",
+   desc:"歌舞伎は出雲の阿国の「歌舞伎踊り」から始まったよ。顔の赤いもようは「くまどり」というんだ。",
+   body:cloth("#e8701a")+`<path d="M130 120 v60 M150 118 v62 M118 150 h52 M118 166 h50" stroke="#2b2b2b" stroke-width="3"/>`, legs:"#2b2b2b",
+   face:`<path d="M60 98 q16 -22 32 2 M98 100 q16 -24 32 0 M58 124 q-14 8 -24 -4 M136 124 q14 8 24 -4 M88 90 q6 -14 12 0" stroke="#e02424" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+   top:`<path d="M12 72 Q8 -24 98 -14 Q188 -24 184 72 Q160 28 98 32 Q36 28 12 72Z" fill="#1d1d1d"/><path d="M98 -14 q-6 -24 6 -36 q2 18 -6 36z" fill="#1d1d1d"/>`},
+  {id:"hyakusho", name:"おひゃくしょう", r:"N", bg:"#f3ead0", eyes:"happy",
+   desc:"百姓は人口の約85%。年貢を納めて武士の生活を支えたよ。頭のかさは「すげがさ」。",
+   body:cloth("#7a5c3a"), legs:"#9b8361",
+   top:`<path d="M6 50 L98 -18 L190 50 Q98 66 6 50Z" fill="#d9b25a" stroke="#b08a35" stroke-width="2.5"/><path d="M98 -18 L60 56 M98 -18 L136 56 M98 -18 L98 60" stroke="#b08a35" stroke-width="1.5"/><path d="M172 188 Q182 140 164 104" stroke="#8a6d1f" stroke-width="3.5" fill="none"/>${[0,1,2,3,4].map(i=>`<ellipse cx="${167+i*2}" cy="${110+i*10}" rx="7" ry="4" fill="#e6b422" transform="rotate(-30 ${167+i*2} ${110+i*10})"/>`).join("")}`},
+  {id:"chonin", name:"ちょうにん", r:"N", bg:"#dcecff",
+   desc:"町人は城下町に住んだ職人や商人のこと。商人はそろばんでお金の計算をしたよ。",
+   body:cloth("#2f6fb5")+`<path d="M130 116 v66 M146 114 v68 M162 120 v56" stroke="#5b93d6" stroke-width="5"/>`, legs:"#2f6fb5",
+   top:`<path d="M22 58 Q98 28 174 58" stroke="#e85d5d" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M170 54 l22 -12 M172 60 l24 2" stroke="#e85d5d" stroke-width="6" stroke-linecap="round"/><g transform="translate(10 150)"><rect width="58" height="31" rx="4" fill="#8b5a2b"/><rect x="4" y="13" width="50" height="3" fill="#5a3a1a"/>${BEADS}</g>`},
+  {id:"daimyo", name:"だいみょう", r:"R", bg:"#eadcf5",
+   desc:"大名は1万石以上の領地をもつ武士。肩のはった服は「かみしも」というよ。",
+   body:cloth("#6c3483"), legs:"#4a235a",
+   top:MAGE+WINGS("#6c3483")+FAN("#fff4c2","#c99a14")},
+  {id:"dutch", name:"オランダしょうにん", r:"N", bg:"#ffe8cc",
+   desc:"鎖国のあいだも、オランダは長崎の出島で貿易を許されていたよ。",
+   body:cloth("#2e5e3a"), legs:"#3b2a20",
+   top:`<path d="M46 148 Q100 172 154 148 L154 160 Q100 186 46 160Z" fill="#fff" stroke="#ddd" stroke-width="2"/><ellipse cx="98" cy="26" rx="78" ry="13" fill="#3b2a20"/><path d="M58 26 Q58 -16 98 -16 Q138 -16 138 26Z" fill="#3b2a20"/><g transform="rotate(-25 170 150)"><rect x="140" y="140" width="58" height="13" rx="3" fill="#c79a3b"/><rect x="130" y="142" width="14" height="9" rx="2" fill="#8b6508"/></g>`},
+  {id:"eshi", name:"えし", r:"N", bg:"#e0f4f4",
+   desc:"狩野永徳は、ふすまや屏風に豪華な絵をえがいた絵師だよ。「唐獅子図屏風」が有名！",
+   body:cloth("#2c3e7a")+DOTS([[140,150,5],[160,138,4],[150,170,4]],"#ffc83d")+DOTS([[166,160,4]],"#ff5a5a"),
+   legs:"#2c3e7a",
+   face:`<circle cx="130" cy="96" r="5" fill="#3fa9f5" opacity=".8"/>`,
+   top:`<ellipse cx="86" cy="18" rx="48" ry="14" fill="#c0392b"/><circle cx="86" cy="5" r="5" fill="#c0392b"/><g transform="rotate(25 168 120)"><rect x="164" y="70" width="8" height="84" rx="3" fill="#a0522d"/><path d="M164 154 h8 l-1 16 q-3 6 -6 0z" fill="#222"/></g>`},
+  {id:"okuni", name:"おどりこ", r:"R", bg:"#ffe0f0", eyes:"happy",
+   desc:"出雲の阿国が始めた歌舞伎踊りは、たくさんの人に大人気だったよ。",
+   body:cloth("#e26aa8")+DOTS([[146,150,5],[164,166,4]],"#fff3a8"), legs:"#7b3f8c",
+   top:`${[[52,22,"#ff7aa8"],[34,40,"#ffd34d"],[70,10,"#ff9f43"]].map(([x,y,c])=>`<g transform="translate(${x} ${y})">${[0,72,144,216,288].map(a=>`<circle cx="${Math.cos(a*Math.PI/180)*9}" cy="${Math.sin(a*Math.PI/180)*9}" r="7" fill="${c}"/>`).join("")}<circle r="5" fill="#fff"/></g>`).join("")}${FAN("#ff5a7a","#b8325a")}`},
+  {id:"ashigaru", name:"あしがる", r:"N", bg:"#efe4d6",
+   desc:"足軽は鉄砲隊として活躍したよ。長篠の戦いでは、信長の鉄砲隊が武田軍を破ったんだ。",
+   body:cloth("#6b4f2e")+`<path d="M122 130 h50 M120 146 h54 M122 162 h50" stroke="#4a3520" stroke-width="4"/>`, legs:"#4a3a28",
+   top:`<path d="M16 48 Q98 -14 180 48 Q98 60 16 48Z" fill="#2b2b2b"/><circle cx="98" cy="28" r="8" fill="#e6b422"/><g transform="rotate(-30 150 140)"><rect x="108" y="134" width="96" height="8" rx="2" fill="#5b3a1e"/><rect x="100" y="131" width="26" height="14" rx="4" fill="#7b4a26"/></g>`},
+  {id:"castle", name:"おしろ", r:"SR", bg:"#d9f0ff", eyes:"happy",
+   desc:"安土城・大阪城・姫路城。お城のいちばん高い建物を「天守閣」というよ。",
+   body:cloth("#ffffff")+`<path d="M60 150 h110 M58 166 h110 M100 150 v16 M140 150 v16 M120 166 v16" stroke="#b9c0c8" stroke-width="2"/>`, legs:"#9aa3ad",
+   top:`<rect x="66" y="4" width="64" height="20" fill="#fff" stroke="#9aa3ad" stroke-width="2"/><rect x="76" y="9" width="8" height="8" fill="#3d4a5c"/><rect x="94" y="9" width="8" height="8" fill="#3d4a5c"/><rect x="112" y="9" width="8" height="8" fill="#3d4a5c"/><path d="M54 8 L142 8 L128 -8 L68 -8Z" fill="#3d4a5c"/><rect x="78" y="-26" width="40" height="18" fill="#fff" stroke="#9aa3ad" stroke-width="2"/><rect x="92" y="-21" width="12" height="8" fill="#3d4a5c"/><path d="M68 -24 L128 -24 L116 -38 L80 -38Z" fill="#3d4a5c"/><path d="M82 -38 q-8 -10 2 -16 M114 -38 q8 -10 -2 -16" stroke="#f2c230" stroke-width="5" fill="none" stroke-linecap="round"/>`},
+  {id:"shogun", name:"しょうぐん", r:"SR", bg:"#fff3c4",
+   desc:"征夷大将軍は武士のいちばん上。徳川家康は1603年に江戸幕府を開いたよ。",
+   back:`<circle cx="98" cy="90" r="104" fill="#ffe27a" opacity=".55"/>`,
+   body:cloth("#1f3a7a")+`<circle cx="152" cy="152" r="10" fill="#f2c230"/><circle cx="152" cy="152" r="4" fill="#1f3a7a"/>`, legs:"#14285a",
+   top:MAGE+WINGS("#1f3a7a")+`<path d="M12 136 L64 150 M184 136 L132 150" stroke="#f2c230" stroke-width="3"/>`+FAN("#f2c230","#a87800")},
+  {id:"tsushinshi", name:"つうしんし", r:"R", bg:"#e2f3ea",
+   desc:"朝鮮通信使は、将軍が代わるごとに朝鮮から江戸にやって来た使節だよ。",
+   body:cloth("#4aa3c7"), legs:"#2d6f8c",
+   top:`<ellipse cx="98" cy="24" rx="72" ry="11" fill="#222" opacity=".85"/><rect x="74" y="-24" width="48" height="48" rx="7" fill="#222"/><g transform="translate(146 150) rotate(-15)"><rect x="0" y="0" width="42" height="18" rx="3" fill="#fffbe8" stroke="#c9b27a" stroke-width="2"/><rect x="-4" y="-3" width="7" height="24" rx="3" fill="#b34a2a"/><rect x="39" y="-3" width="7" height="24" rx="3" fill="#b34a2a"/></g>`},
+  {id:"ryukyu", name:"りゅうきゅうおどり", r:"R", bg:"#fff0c2", eyes:"happy",
+   desc:"琉球王国（今の沖縄県）は、1609年に薩摩藩に征服されたよ。大きな花のかさは、琉球のおどりの衣装。",
+   body:cloth("#f4c430")+DOTS([[140,150,5],[158,164,5],[162,140,4]],"#e8473f")+DOTS([[148,170,4],[130,164,4]],"#2a6fb5"), legs:"#2a6fb5",
+   top:`<path d="M26 46 Q98 0 170 46 Q98 56 26 46Z" fill="#2a6fb5"/><g transform="translate(98 2)">${[0,45,90,135,180,225,270,315].map(a=>`<ellipse cx="${Math.cos(a*Math.PI/180)*16}" cy="${Math.sin(a*Math.PI/180)*12}" rx="11" ry="9" fill="#e8473f"/>`).join("")}<circle r="9" fill="#ffd34d"/></g>`},
+  {id:"chef", name:"コック", r:"N", bg:"#ffeede", eyes:"happy",
+   desc:"おまけのシール！ 江戸時代、お米は年貢として納められていたよ。",
+   body:cloth("#fafafa")+`<path d="M120 118 L136 140 L152 116" fill="#e85d5d"/>`, legs:"#e0e0e0",
+   top:`<path d="M62 32 Q46 -6 72 -12 Q78 -36 98 -30 Q120 -38 126 -12 Q152 -6 134 32Z" fill="#fff" stroke="#ddd" stroke-width="2"/><rect x="64" y="22" width="68" height="16" rx="3" fill="#fff" stroke="#ddd" stroke-width="2"/><g transform="translate(160 150)"><path d="M0 -24 Q6 -24 24 8 Q26 16 16 16 H-16 Q-26 16 -24 8 Q-6 -24 0 -24Z" fill="#fff" stroke="#e0e0e0" stroke-width="2"/><rect x="-10" y="2" width="20" height="14" fill="#2b3a2b"/></g>`},
+  {id:"panda", name:"パンダ", r:"R", bg:"#e8f6e0", eyeColor:"#fff",
+   desc:"おまけのシール！ パンダがくらす中国（明・清）とは、鎖国のあいだも長崎で貿易をしていたよ。",
+   back:`<circle cx="36" cy="30" r="22" fill="#222"/><circle cx="160" cy="30" r="22" fill="#222"/>`,
+   body:cloth("#222"), legs:"#222",
+   face:`<ellipse cx="77" cy="105" rx="13" ry="15" fill="#222" transform="rotate(-18 77 105)"/><ellipse cx="111" cy="106" rx="13" ry="15" fill="#222" transform="rotate(18 111 106)"/>`},
+  {id:"wizard", name:"まほうつかい", r:"R", bg:"#ece2ff",
+   desc:"おまけのシール！ 歴史の言葉をおぼえる魔法の呪文は「くり返し」だよ。",
+   body:cloth("#5b3aa8")+STAR(146,152,1,"#ffd34d")+STAR(164,170,.7,"#ffd34d"), legs:"#3b2a70",
+   top:`<path d="M26 44 Q98 58 170 44 Q98 30 26 44Z" fill="#3b2a70"/><path d="M50 42 Q80 10 118 -54 Q132 0 146 42Z" fill="#5b3aa8"/>${STAR(100,6,1.1,"#ffd34d")}${STAR(124,-24,.7,"#ffd34d")}<path d="M150 186 L184 128" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>${STAR(186,124,1.3,"#ffd34d")}`},
+  {id:"astronaut", name:"うちゅうひこうし", r:"SR", bg:"#1d2b53",
+   desc:"おまけのシール！ 宇宙から見ると、五街道もお城も見えるかな？",
+   back:STAR(10,10,1,"#fff")+STAR(186,0,.7,"#ffd34d")+STAR(196,150,.8,"#fff")+STAR(0,140,.6,"#ffd34d"),
+   body:cloth("#f5f5f5")+`<rect x="140" y="140" width="22" height="14" rx="2" fill="#e85d5d"/><circle cx="151" cy="147" r="4" fill="#fff"/>`, legs:"#e0e0e0",
+   top:`<circle cx="98" cy="90" r="98" fill="rgba(180,220,255,.22)" stroke="#d6e8f7" stroke-width="6"/><path d="M40 40 Q60 14 96 6" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".8"/><path d="M150 0 L166 -34" stroke="#ccc" stroke-width="4"/><circle cx="168" cy="-38" r="7" fill="#e85d5d"/>`},
+  {id:"neko", name:"ねこ", r:"N", bg:"#fff1d6", eyes:"happy",
+   desc:"おまけのシール！ 江戸時代にも、ねこは人気のペットだったんだって。",
+   back:`<path d="M24 54 L30 -10 L78 22Z M172 54 L166 -10 L118 22Z" fill="#fbf3d8" stroke="#e6dbb3" stroke-width="2"/><path d="M34 40 L38 6 L64 24Z M162 40 L158 6 L132 24Z" fill="#ffc2c2"/><path d="M168 170 Q206 150 190 110" stroke="#f1e6c4" stroke-width="14" fill="none" stroke-linecap="round"/>`,
+   face:`<path d="M40 112 L66 114 M40 124 L66 120 M128 114 L154 112 M128 120 L154 124" stroke="#9b8f6e" stroke-width="2" stroke-linecap="round"/>`},
+];
+
+function stickerSVG(st){
+  const eye = st.eyeColor || "#2a2a2a";
+  const eyes = st.eyes==="happy"
+    ? `<g fill="none" stroke="${eye}" stroke-width="3.4" stroke-linecap="round"><path d="M71 107 q7 -9 14 0"/><path d="M103 108 q7 -9 14 0"/></g>`
+    : `<g fill="${eye}"><ellipse cx="78" cy="104" rx="4.6" ry="5.4"/><ellipse cx="110" cy="105" rx="4.6" ry="5.4"/></g>`;
+  const legs = st.legs ? `<rect x="70" y="148" width="25" height="30" rx="9" fill="${st.legs}"/><rect x="112" y="150" width="25" height="28" rx="9" fill="${st.legs}"/>` : "";
+  return `<svg viewBox="-16 -62 232 258">
+    ${st.back||""}
+    <ellipse cx="112" cy="146" rx="58" ry="36" fill="url(#fur)" stroke="#e6dbb3" stroke-width="1.5"/>
+    ${st.body||""}
+    <rect x="70" y="140" width="25" height="46" rx="12.5" fill="url(#fur)" stroke="#e6dbb3" stroke-width="1.5"/>
+    <rect x="112" y="142" width="25" height="44" rx="12.5" fill="url(#fur)" stroke="#e6dbb3" stroke-width="1.5"/>
+    ${legs}
+    <ellipse cx="98" cy="86" rx="82" ry="72" fill="url(#fur)" stroke="#e8deb8" stroke-width="1.5"/>
+    ${st.face||""}
+    <g opacity=".7"><ellipse cx="66" cy="118" rx="9" ry="5" fill="#ffb6b0"/><ellipse cx="122" cy="119" rx="9" ry="5" fill="#ffb6b0"/></g>
+    ${eyes}
+    <g fill="none" stroke="#2a2a2a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M94 108 v4"/><path d="M89 117 l5 -5 l5 5"/></g>
+    ${st.top||""}
+  </svg>`;
+}
+function stickerHTML(st, locked=false, extra=""){
+  return `<div class="stk r-${st.r} ${locked?"locked":""} ${extra}" style="--bg:${st.bg}">${stickerSVG(st)}</div>`;
+}
+const ownedCount = () => STICKERS.filter(s=>save.stickers[s.id]).length;
+
+/* =========================================================
    ホーム画面
    ========================================================= */
 const key = (chId, si) => `${chId}-${si}`;
 const starsOf = (chId, si) => save.stars[key(chId,si)] || 0;
 function isUnlocked(ch, si){
-  if(si === 0) return true;                          // 各章の最初はいつでもOK
-  if(si === 5) return [0,1,2,3,4].every(i=>starsOf(ch.id,i)>0); // ボスは全部クリアで
+  if(si === 0) return true;                                      // 各章の最初はいつでもOK
+  if(si === 5) return [0,1,2,3,4].every(i=>starsOf(ch.id,i)>0);  // まとめテストは全部クリアで
   return starsOf(ch.id, si-1) > 0;
 }
 function totalStars(){ return Object.values(save.stars).reduce((a,b)=>a+b,0); }
+function gaugeHTML(n, cls=""){ return `<div class="gauge ${cls}">${[0,1,2].map(i=>`<span class="${i<n?"on":""}"></span>`).join("")}</div>`; }
 
 function renderHome(){
   const el = document.getElementById("home");
+  const weak = weakList();
+  const mastered = ALL_QS.filter(isMastered).length;
   let html = `
   <div class="topbar">
     <div class="logo">れきしクエスト</div>
@@ -621,7 +944,25 @@ function renderHome(){
   </div>
   <div class="teacher-row">
     ${teacherBox()}
-    <div class="bubble"><div class="tname">${TEACHER_NAME}</div><span id="greet">${pick(LINES.greet)}</span></div>
+    <div class="bubble"><div class="tname">${TEACHER_NAME}</div><span id="greet">${save.tickets?"ガチャがまわせるよ！どんなシールが出るかな？":pick(LINES.greet)}</span></div>
+  </div>
+  <div class="hub">
+    <div class="hub-card">
+      <div class="hub-title">🎁 ガチャゲージ</div>
+      ${gaugeHTML(save.gauge)}
+      <div class="hub-sub">${save.tickets?`ガチャが <b>${save.tickets}回</b> まわせるよ！`:`あと ${3-save.gauge} ステージクリアでガチャ！`}</div>
+      <div class="hub-btns">
+        <button class="btn gold ${save.tickets?"shine":""}" onclick="openGacha()">🎰 ガチャ${save.tickets?` ×${save.tickets}`:""}</button>
+        <button class="btn blue" onclick="openBook()">📖 シール帳</button>
+      </div>
+      <div class="hub-sub">シール ${ownedCount()} / ${STICKERS.length} しゅるい</div>
+    </div>
+    <div class="hub-card">
+      <div class="hub-title">📒 にがて復習</div>
+      <div class="hub-sub">${weak.length?`まちがえたことがあって、まだおぼえていない問題が <b>${weak.length}問</b>`:"にがてな問題は、いまはないよ！"}</div>
+      <button class="btn red" onclick="tapReview()" ${weak.length?"":"disabled"}>📒 ふくしゅうする</button>
+      <div class="hub-sub">おぼえた問題：<b>${mastered}</b> / ${ALL_QS.length}（3回連続で正解すると「おぼえた！」）</div>
+    </div>
   </div>`;
   for(const ch of CHAPTERS){
     html += `<section class="chapter" style="--c:${ch.color}">
@@ -634,21 +975,25 @@ function renderHome(){
       const st = starsOf(ch.id, si);
       const isNext = unlocked && st===0 && !nextMarked;
       if(isNext) nextMarked = true;
+      const pool = stagePool(ch, si);
+      const m = pool.filter(isMastered).length;
       const x = Math.round(Math.sin(si*1.15)*80);
       const label = boss ? "まとめテスト" : ch.stages[si].name;
       const icon = !unlocked ? "🔒" : boss ? "👑" : ch.stages[si].icon;
-      const maxStar = 3;
       html += `<div class="node-wrap" style="transform:translateX(${x}px)">
-        <button class="node ${boss?"boss":""} ${unlocked?"":"locked"} ${isNext?"next":""}" onclick="tapNode(${ch.id},${si})">
-          ${isNext?`<span class="start-tag">スタート！</span>`:""}${icon}
-        </button>
+        <div class="ring ${boss?"boss":""}" style="--p:${Math.round(m/pool.length*100)}">
+          <button class="node ${boss?"boss":""} ${unlocked?"":"locked"} ${isNext?"next":""}" onclick="tapNode(${ch.id},${si})">
+            ${isNext?`<span class="start-tag">スタート！</span>`:""}${icon}
+          </button>
+        </div>
         <div class="node-label">${boss?"👑 ":""}${label}</div>
-        <div class="node-stars">${st?"★".repeat(st)+"☆".repeat(maxStar-st):""}</div>
+        <div class="node-sub">${unlocked?`おぼえた ${m}/${pool.length}`:""}</div>
+        <div class="node-stars">${st?"★".repeat(st)+"☆".repeat(3-st):""}</div>
       </div>`;
     }
     html += `</div></section>`;
   }
-  html += `<p class="small-note">ステージをタップして始めよう。むずかしい答え方ほど★がたくさんもらえるよ！</p>`;
+  html += `<p class="small-note">クリアしたステージも、何回でも遊べるよ。黄色いリングが満タンになるまでがんばろう！</p>`;
   el.innerHTML = html;
 }
 
@@ -659,17 +1004,22 @@ function tapNode(chId, si){
     document.getElementById("greet").textContent = si===5 ? "5つのステージを全部クリアすると挑戦できるよ！" : "前のステージをクリアするとあそべるよ！";
     return;
   }
-  openModeSelect(ch, si);
+  const n = si===5 ? 12 : Math.min(8, ch.stages[si].qs.length);
+  openModeSelect((si===5?"👑 まとめテスト":ch.stages[si].name), `第${ch.id}回 ${ch.title} ・ ${n}問 ・ ハート3つ`, mode=>startStage(ch.id, si, mode));
+}
+function tapReview(){
+  const n = Math.min(10, weakList().length);
+  if(!n) return;
+  openModeSelect("📒 にがて復習", `まだおぼえていない問題から ${n}問 ・ ハート3つ`, mode=>startReview(mode));
 }
 
 /* 答え方を選ぶポップアップ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-function openModeSelect(ch, si){
-  const boss = si===5;
-  const title = boss ? "まとめテスト" : ch.stages[si].name;
-  const n = boss ? 12 : Math.min(8, ch.stages[si].qs.length);
-  let html = `<h2>${boss?"👑 ":""}${title}</h2>
-    <div class="subt">第${ch.id}回 ${ch.title} ・ ${n}問 ・ ハート3つ</div>
+let pendingStart = null;
+function openModeSelect(title, subt, onPick){
+  pendingStart = onPick;
+  let html = `<h2>${title}</h2>
+    <div class="subt">${subt}</div>
     <div class="teacher-row" style="margin:4px 0">
       ${teacherBox("sm")}
       <div class="bubble" style="font-size:17px">どの答え方でちょうせんする？</div>
@@ -677,13 +1027,14 @@ function openModeSelect(ch, si){
     <div class="modes">`;
   for(const [k,m] of Object.entries(MODES)){
     const unsupported = k==="voice" && !SR;
-    html += `<button class="mode" ${unsupported?"disabled":""} onclick="startStage(${ch.id},${si},'${k}')">
+    html += `<button class="mode" ${unsupported?"disabled":""} onclick="pickMode('${k}')">
       <span class="mi">${m.icon}</span>${m.name}<br><span class="ms">${"★".repeat(m.stars)}</span>
       <span class="md">${unsupported?"このブラウザでは使えないよ":m.desc}</span></button>`;
   }
   html += `</div><div class="row"><button class="btn gray wide" onclick="closeModal()">やめる</button></div>`;
   showModal(html);
 }
+function pickMode(m){ closeModal(); if(pendingStart) pendingStart(m); }
 function showModal(html){ document.getElementById("sheet").innerHTML = html; document.getElementById("modal").classList.add("show"); }
 function closeModal(){ document.getElementById("modal").classList.remove("show"); }
 document.getElementById("modal").addEventListener("click", e=>{ if(e.target.id==="modal") closeModal(); });
@@ -701,7 +1052,7 @@ function openSettings(){
 }
 function toggleSetting(k){ save.settings[k] = !save.settings[k]; persist(); openSettings(); }
 function resetAll(){
-  if(!confirm("★や💎がぜんぶ消えます。本当にやり直しますか？")) return;
+  if(!confirm("★・💎・シールなど、記録がぜんぶ消えます。本当にやり直しますか？")) return;
   save = defaultSave(); persist(); closeModal(); renderHome();
 }
 
@@ -710,23 +1061,27 @@ function resetAll(){
    ========================================================= */
 let Q = null;  // いま遊んでいるステージの情報
 
-function startStage(chId, si, mode){
+function startSession(opt){
   closeModal();
-  const ch = CHAPTERS.find(c=>c.id===chId);
-  const boss = si===5;
-  const pool = boss ? ch.stages.flatMap(s=>s.qs) : ch.stages[si].qs;
-  const n = boss ? 12 : Math.min(8, pool.length);
-  const list = shuffle(pool).slice(0, n);
-  Q = {
-    ch, si, mode, boss,
-    title: boss ? "まとめテスト" : ch.stages[si].name,
-    queue: list.map(q=>({q, retry:false})),
-    total: n, cleared: 0, hearts: 3, combo: 0, firstTry: 0, xp: 0,
-    missed: [], current: null, locked: false,
-  };
+  Q = {...opt, boss: opt.si===5,
+    queue: opt.list.map(q=>({q, retry:false})),
+    total: opt.list.length, cleared: 0, hearts: 3, combo: 0, firstTry: 0, xp: 0,
+    missed: [], learned: [], current: null, locked: false};
   show("quiz");
   nextQuestion();
 }
+function startStage(chId, si, mode){
+  const ch = CHAPTERS.find(c=>c.id===chId);
+  const pool = stagePool(ch, si);
+  const n = si===5 ? 12 : Math.min(8, pool.length);
+  startSession({kind:"stage", ch, si, mode, title: si===5 ? "まとめテスト" : ch.stages[si].name, list: pickQuestions(pool, n)});
+}
+function startReview(mode){
+  const weak = weakList();
+  if(!weak.length){ goHome(); return; }
+  startSession({kind:"review", mode, title:"にがて復習", list: pickQuestions(weak, Math.min(10, weak.length))});
+}
+function restartSession(){ Q.kind==="review" ? startReview(Q.mode) : startStage(Q.ch.id, Q.si, Q.mode); }
 
 function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -743,6 +1098,7 @@ function nextQuestion(){
   Q.locked = false;
   const {q, retry} = Q.current;
   const mode = q.o4 ? "choice" : Q.mode;
+  const m = masteryOf(q);
   const el = document.getElementById("quiz");
   el.innerHTML = `
     <div class="quiz-top">
@@ -754,7 +1110,7 @@ function nextQuestion(){
     <div class="teacher-row">
       ${teacherBox("sm")}
       <div class="bubble">
-        <div class="q-tag">${retry?"🔁 もう一回！":""}${q.o4 && Q.mode!=="choice"?" この問題は4択だよ":""}</div>
+        <div class="q-tag">${retry?"🔁 もう一回！":""}${q.o4 && Q.mode!=="choice"?" この問題は4択だよ":""}${!retry && m>=MASTER?" ✅ おぼえた問題":""}</div>
         <div class="q-text">${ruby(q.q)}</div>
         <button class="read-btn" onclick="speak(spoken(Q.current.q.q), true)">🔈 読んで</button>
       </div>
@@ -771,7 +1127,7 @@ function nextQuestion(){
 /* --- 4択 --- */
 function renderChoices(ans, q){
   const opts = shuffle([q.a, ...q.d.slice(0,3)]);
-  ans.innerHTML = `<div class="choices">${opts.map((o,i)=>`<button class="choice" data-silent="1" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  ans.innerHTML = `<div class="choices">${opts.map(o=>`<button class="choice" data-silent="1" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
   ans.querySelectorAll(".choice").forEach(b=>b.addEventListener("click", ()=>{
     if(Q.locked) return;
     const ok = b.dataset.v === q.a;
@@ -782,7 +1138,7 @@ function renderChoices(ans, q){
 }
 
 /* 「ヒント」と「わからない」ボタン */
-function helperRow(q){
+function helperRow(){
   return `<div class="row">
     <button class="btn gray" onclick="showHint()">💡 ヒント</button>
     <button class="btn gray" onclick="giveUp()">🤔 わからない</button>
@@ -808,7 +1164,7 @@ function renderType(ans, q){
   ans.innerHTML = `${hintArea(q)}
     <input id="typed" class="ans-input" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ここに答えを入れてね">
     <div class="row"><button class="btn wide" onclick="submitTyped()">こたえる</button></div>
-    ${helperRow(q)}`;
+    ${helperRow()}`;
   const inp = document.getElementById("typed");
   inp.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); submitTyped(); } });
   setTimeout(()=>inp.focus(), 50);
@@ -831,14 +1187,14 @@ function renderVoice(ans, q){
       <button class="btn blue" onclick="toggleListen()">🎤 もう一回話す</button>
       <button class="btn" onclick="submitHeard()">これでこたえる</button>
     </div>
-    ${helperRow(q)}`;
+    ${helperRow()}`;
 }
 let heardList = [];
 function toggleListen(){
   if(Q.locked) return;
   if(recog){ stopListening(); return; }
   SFX.pop();
-  speechSynthesis && speechSynthesis.cancel();
+  if(window.speechSynthesis) speechSynthesis.cancel();
   heardList = [];
   document.getElementById("voiceConfirm").style.display = "none";
   document.getElementById("heard").textContent = "";
@@ -846,8 +1202,7 @@ function toggleListen(){
     recog = new SR();
     recog.lang = "ja-JP"; recog.interimResults = true; recog.maxAlternatives = 5; recog.continuous = false;
   }catch(e){ document.getElementById("micNote").textContent = "音声入力が使えないみたい…"; return; }
-  const mic = document.getElementById("mic");
-  mic.classList.add("listening");
+  document.getElementById("mic").classList.add("listening");
   document.getElementById("micNote").textContent = "きいてるよ…";
   recog.onresult = e=>{
     const res = e.results[e.results.length-1];
@@ -862,9 +1217,10 @@ function toggleListen(){
   };
   recog.onend = ()=>{
     recog = null;
-    const m = document.getElementById("mic"); if(m) m.classList.remove("listening");
+    const mic = document.getElementById("mic"); if(mic) mic.classList.remove("listening");
     if(!heardList.length || Q.locked) return;
-    if(heardList.some(t=>isCorrect(Q.current.q, t))){ judge(true, heardList.find(t=>isCorrect(Q.current.q,t))); return; }
+    const hit = heardList.find(t=>isCorrect(Q.current.q, t));
+    if(hit){ judge(true, hit); return; }
     document.getElementById("micNote").textContent = "こう聞こえたよ。これでいい？";
     document.getElementById("heard").textContent = `「${heardList[0]}」`;
     document.getElementById("voiceConfirm").style.display = "flex";
@@ -958,8 +1314,7 @@ async function submitHand(){
     const hit = cands.find(c=>isCorrect(Q.current.q, c));
     judge(!!hit, hit || cands[0] || "", {hand:true});
   }catch(e){
-    // 読み取りができなかったときは、自分で丸つけ
-    selfGrade();
+    selfGrade();   // 読み取りができなかったときは、自分で丸つけ
   }
 }
 function selfGrade(){
@@ -973,24 +1328,40 @@ function selfGrade(){
 function selfAnswer(ok){ Q.locked=false; hideFeedback(); judge(ok, ""); }
 
 /* --- 正解・不正解の判定 --- */
+const meterHTML = m => `<div class="m-meter">おぼえた度 <b>${"●".repeat(m)}${"○".repeat(MASTER-m)}</b>${m<MASTER?`（あと${MASTER-m}回連続で正解すると「おぼえた！」）`:""}</div>`;
 function judge(ok, userText="", opt={}){
   if(Q.locked) return;
   Q.locked = true;
   stopListening();
   const {q, retry} = Q.current;
+  // おぼえた度を記録（「字はあってた！」で元にもどせるように、前の値もとっておく）
+  Q.prev = {m: masteryOf(q), wrong: !!save.wrong[q.id]};
+  let justLearned = false;
+  if(ok){
+    const m = Math.min(MASTER, Q.prev.m + 1);
+    save.mastery[q.id] = m;
+    justLearned = m===MASTER && Q.prev.m<MASTER;
+    if(justLearned) Q.learned.push(q);
+  }else{
+    save.mastery[q.id] = 0;
+    save.wrong[q.id] = true;
+  }
+  persist();
   const ansLine = `<div class="fb-ans">こたえ：<b>${esc(q.a)}</b>${q.y && q.y!==q.a && !/^\d+$/.test(q.a)?`（${esc(q.y)}）`:""}</div>`;
   if(ok){
     Q.cleared++; Q.combo++;
     if(!retry) Q.firstTry++;
-    let gain = 10 + (Q.combo>=3 ? 5 : 0);
+    const gain = 10 + (Q.combo>=3 ? 5 : 0);
     Q.xp += gain;
     SFX.correct();
-    if(Q.combo>=3 && Q.combo%3===0) setTimeout(()=>SFX.combo(), 300);
+    if(justLearned) setTimeout(()=>SFX.star(), 280);
+    else if(Q.combo>=3 && Q.combo%3===0) setTimeout(()=>SFX.combo(), 300);
     xpPop("+"+gain);
     teacherMood("happy","jump");
-    const line = Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
+    const line = justLearned ? "おぼえたね！すごい！" : Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
     speak(line);
     showFeedback("good", `<div class="fb-title">⭕ ${line}</div>
+      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！</div>`:meterHTML(save.mastery[q.id])}
       ${userText && opt.hand ? `<div class="fb-exp">よみとった字：「${esc(userText)}」</div>`:""}
       <div class="fb-exp">${esc(q.e||"")}</div>
       <button class="btn wide" onclick="afterAnswer()">つぎへ</button>`);
@@ -1018,6 +1389,11 @@ function overrideHand(){
   Q.queue.pop(); Q.hearts++; Q.cleared++;
   const i = Q.missed.indexOf(q); if(i>=0) Q.missed.splice(i,1);
   if(!Q.current.retry) Q.firstTry++;
+  const m = Math.min(MASTER, Q.prev.m + 1);
+  save.mastery[q.id] = m;
+  if(!Q.prev.wrong) delete save.wrong[q.id];
+  if(m===MASTER && Q.prev.m<MASTER) Q.learned.push(q);
+  persist();
   Q.xp += 10; SFX.correct(); xpPop("+10"); teacherMood("happy","jump"); speak("ごめんね、ちゃんと書けてたね！");
   afterAnswer();
 }
@@ -1042,9 +1418,9 @@ function xpPop(text){
   document.body.appendChild(s); setTimeout(()=>s.remove(), 1000);
 }
 function quitStage(){
-  if(!confirm("とちゅうでやめる？（このステージの記録は残りません）")) return;
-  stopListening(); hideFeedback(); speechSynthesis && speechSynthesis.cancel();
-  show("home"); renderHome();
+  if(!confirm("とちゅうでやめる？（おぼえた度は記録されるけど、ゲージや★はもらえないよ）")) return;
+  stopListening(); hideFeedback(); if(window.speechSynthesis) speechSynthesis.cancel();
+  goHome();
 }
 
 /* =========================================================
@@ -1061,38 +1437,70 @@ function missedHTML(){
   if(!Q.missed.length) return "";
   return `<div class="missed"><h3>📒 まちがえた言葉をおさらい</h3><ul>${
     Q.missed.map(q=>`<li><b>${esc(q.a)}</b>${q.y&&q.y!==q.a&&!/^\d+$/.test(q.a)?`（${esc(q.y)}）`:""}… ${esc(plain(q.q))}</li>`).join("")
-  }</ul></div>`;
+  }</ul><div class="small-note">「にがて復習」で、何回でも練習できるよ</div></div>`;
 }
 function showClear(){
   hideFeedback();
-  const got = MODES[Q.mode].stars;
-  const k = key(Q.ch.id, Q.si);
-  const prev = save.stars[k] || 0;
-  save.stars[k] = Math.max(prev, got);
+  let got = 0;
+  if(Q.kind==="stage"){
+    got = MODES[Q.mode].stars;
+    const k = key(Q.ch.id, Q.si);
+    save.stars[k] = Math.max(save.stars[k]||0, got);
+  }
   save.xp += Q.xp;
   updateStreak();
+  // ガチャゲージ
+  const gBefore = save.gauge;
+  save.gauge++;
+  let ticket = false;
+  if(save.gauge >= 3){ save.gauge -= 3; save.tickets++; ticket = true; }
   persist();
+
   const acc = Math.round(Q.firstTry / Q.total * 100);
   const el = document.getElementById("result");
   el.className = "screen result";
   el.innerHTML = `
     <div style="display:flex;justify-content:center">${teacherBox()}</div>
-    <h1>${Q.boss?"👑 まとめテスト":"ステージ"}クリア！</h1>
+    <h1>${Q.kind==="review"?"📒 にがて復習":Q.boss?"👑 まとめテスト":"ステージ"}クリア！</h1>
     <div style="font-size:18px">${esc(Q.title)}（${MODES[Q.mode].icon} ${MODES[Q.mode].name}）</div>
-    <div class="big-stars">${[0,1,2].map(i=>`<span data-i="${i}">⭐</span>`).join("")}</div>
-    ${got<3?`<div class="small-note">${got<2?"キーボードか音声なら★2つ、":""}手書きなら★3つもらえるよ！</div>`:""}
+    ${Q.kind==="stage"?`<div class="big-stars">${[0,1,2].map(i=>`<span data-i="${i}">⭐</span>`).join("")}</div>
+      ${got<3?`<div class="small-note">${got<2?"キーボードか音声なら★2つ、":""}手書きなら★3つもらえるよ！</div>`:""}`:""}
     <div class="res-cards">
       <div class="res-card">💎 けいけんち<b>+${Q.xp}</b></div>
       <div class="res-card">🎯 1回で正解<b>${acc}%</b></div>
       <div class="res-card">🔥 れんぞく<b>${save.streak.count}日</b></div>
     </div>
+    <div class="res-box">
+      <div style="font-size:18px;margin-bottom:8px">🎁 ガチャゲージ</div>
+      <div id="resGauge">${gaugeHTML(gBefore, "big")}</div>
+      <div id="ticketMsg" class="small-note" style="margin-top:8px">${ticket?"":`あと ${3-save.gauge} ステージクリアでガチャ！`}</div>
+    </div>
+    ${Q.learned.length?`<div class="res-box"><div style="font-size:18px">🎉 新しくおぼえた言葉</div><div class="chips">${Q.learned.map(q=>`<span class="chip">${esc(q.a)}</span>`).join("")}</div></div>`:""}
     ${missedHTML()}
-    <div class="row"><button class="btn wide" onclick="goHome()">ホームへもどる</button></div>`;
+    <div class="row" id="resBtns">
+      <button class="btn gray" onclick="goHome()">ホームへ</button>
+      <button class="btn blue" onclick="restartSession()">🔁 もう一回</button>
+    </div>`;
   show("result");
   teacherMood("happy","jump");
   SFX.clear(); confetti();
   speak(pick(LINES.clear));
-  for(let i=0;i<got;i++) setTimeout(()=>{ el.querySelector(`.big-stars span[data-i="${i}"]`).classList.add("got"); SFX.star(); }, 700 + i*450);
+  let t = 700;
+  for(let i=0;i<got;i++){ setTimeout(()=>{ el.querySelector(`.big-stars span[data-i="${i}"]`).classList.add("got"); SFX.star(); }, t); t += 450; }
+  // ゲージが1つたまる演出
+  setTimeout(()=>{
+    const spans = el.querySelectorAll("#resGauge span");
+    const s = spans[gBefore]; if(s){ s.classList.add("on","pop"); SFX.gauge(); }
+    if(ticket){
+      setTimeout(()=>{
+        el.querySelector("#resGauge .gauge").classList.add("full");
+        SFX.ticket();
+        el.querySelector("#ticketMsg").innerHTML = `<b style="color:#c98b00;font-size:18px">🎉 ガチャが1回まわせるよ！</b>`;
+        el.querySelector("#resBtns").insertAdjacentHTML("beforeend", `<button class="btn gold shine" onclick="openGacha()">🎰 ガチャへ</button>`);
+        speak("ゲージがたまった！ガチャがまわせるよ！");
+      }, 600);
+    }
+  }, t + 200);
 }
 function showFail(){
   hideFeedback();
@@ -1105,7 +1513,7 @@ function showFail(){
     ${missedHTML()}
     <div class="row">
       <button class="btn gray" onclick="goHome()">ホームへ</button>
-      <button class="btn" onclick="startStage(${Q.ch.id},${Q.si},'${Q.mode}')">もう一回！</button>
+      <button class="btn" onclick="restartSession()">もう一回！</button>
     </div>`;
   show("result");
   teacherMood("sad","shake");
@@ -1125,6 +1533,146 @@ function confetti(){
     document.body.appendChild(d);
     setTimeout(()=>d.remove(), 5200);
   }
+}
+
+/* =========================================================
+   ガチャガチャ
+   ========================================================= */
+const CAP_COLORS = {N:["#ff8ab0","#6cc4ff","#86e255","#ffb84d"], R:["#c9d3dd"], SR:["#ffcf3d"]};
+let G = null;  // ガチャの状態
+function openGacha(){ show("gacha"); renderGacha(); }
+function renderGacha(){
+  G = {busy:false, st:null, isNew:false};
+  const minis = Array.from({length:13}, (_,i)=>{
+    const c = ["#ff8ab0","#6cc4ff","#86e255","#ffb84d","#c9a7ff","#ffcf3d"][i%6];
+    const x = [20,70,120,160,10,55,100,145,30,80,130,170,95][i], y = [120,130,125,115,80,90,85,78,40,50,45,55,10][i];
+    return `<div class="cap-mini" style="--cc:${c};left:${x}px;top:${y}px;transform:rotate(${i*37}deg)"></div>`;
+  }).join("");
+  document.getElementById("gacha").innerHTML = `
+    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">🎰 みるくガチャ</div><div class="stat" id="gLeft">のこり ${save.tickets}回</div></div>
+    <div class="gacha-stage">
+      <div class="machine" id="machine">
+        <div class="dome">${minis}</div>
+        <div class="mbody">
+          <div class="mlabel">みるく<br>ガチャ</div>
+          ${save.tickets?`<div class="tap-here">まわしてね！</div>`:""}
+          <button class="handle" id="handle" data-silent="1" onclick="turnHandle()" ${save.tickets?"":"disabled"}><span></span></button>
+          <div class="chute"></div>
+        </div>
+      </div>
+      <div class="capsule" id="capsule" onclick="openCapsule()"><div class="ctop"></div><div class="cbot"></div></div>
+      <div class="reveal" id="reveal"></div>
+    </div>
+    <div class="small-note" id="gnote">${save.tickets?"ハンドルをタップしてまわそう！":"ステージを3回クリアすると、ガチャが1回まわせるよ"}</div>
+    <div class="row" id="gbtns"><button class="btn blue wide" onclick="openBook()">📖 シール帳を見る</button></div>`;
+  if(save.tickets) speak("ハンドルをまわしてね！");
+}
+// レア度を決めてから、まだ持っていないシールが出やすくなるように選ぶ
+function drawSticker(){
+  const total = Object.values(RARITY).reduce((a,r)=>a+r.weight,0);
+  let x = Math.random()*total, rar = "N";
+  for(const [k,r] of Object.entries(RARITY)){ if((x -= r.weight) < 0){ rar = k; break; } }
+  const cands = STICKERS.filter(s=>s.r===rar);
+  const w = cands.map(s=>save.stickers[s.id] ? 1 : 3);
+  let y = Math.random()*w.reduce((a,b)=>a+b,0);
+  for(let i=0;i<cands.length;i++){ if((y -= w[i]) < 0) return cands[i]; }
+  return cands[0];
+}
+function turnHandle(){
+  if(G.busy || save.tickets<=0) return;
+  G.busy = true;
+  // 先にシールを決めて保存（とちゅうで閉じてもなくならないように）
+  const st = drawSticker();
+  G.st = st; G.isNew = !save.stickers[st.id];
+  save.tickets--;
+  save.stickers[st.id] = (save.stickers[st.id]||0) + 1;
+  persist();
+  document.getElementById("gLeft").textContent = `のこり ${save.tickets}回`;
+  document.querySelector(".tap-here")?.remove();
+  document.getElementById("handle").classList.add("turn");
+  document.getElementById("machine").classList.add("shake");
+  document.getElementById("gnote").textContent = "ガラガラ…なにが出るかな？";
+  SFX.ratchet(); speak("なにが出るかな？");
+  setTimeout(()=>{
+    const cap = document.getElementById("capsule");
+    cap.style.setProperty("--cc", pick(CAP_COLORS[st.r]));
+    if(st.r==="SR") cap.querySelector(".ctop").style.background = "conic-gradient(#ff5a5a,#ffc83d,#5cbf2a,#3fa9f5,#b36bff,#ff5a5a)";
+    cap.classList.add("drop");
+    SFX.thud();
+    setTimeout(()=>{
+      cap.classList.remove("drop"); cap.classList.add("ready");
+      document.getElementById("machine").classList.remove("shake");
+      document.getElementById("machine").classList.add("dim");
+      document.getElementById("gnote").textContent = st.r==="N" ? "カプセルをタップしてあけよう！" : "✨ キラキラのカプセルだ！タップしてあけよう！";
+      G.ready = true;
+    }, 1100);
+  }, 1000);
+}
+function openCapsule(){
+  if(!G.ready) return;
+  G.ready = false;
+  const st = G.st;
+  const cap = document.getElementById("capsule");
+  cap.classList.add("open"); SFX.pop();
+  setTimeout(()=>{
+    const fl = document.createElement("div"); fl.className = "flash"; document.body.appendChild(fl); setTimeout(()=>fl.remove(), 700);
+    cap.style.display = "none";
+    const rv = document.getElementById("reveal");
+    rv.innerHTML = `<div class="rays ${st.r}"></div>
+      ${stickerHTML(st)}
+      <div class="rv-name">${st.name}</div>
+      <div class="rv-rar">${RARITY[st.r].stars} ${RARITY[st.r].name}</div>
+      ${G.isNew?`<div class="rv-new">NEW!</div>`:`<div class="small-note" style="z-index:1">${save.stickers[st.id]}まいめ</div>`}`;
+    rv.classList.add("show");
+    SFX["reveal"+st.r]();
+    if(st.r!=="N") confetti();
+    speak(`${st.name}のシールだ！${G.isNew?"はじめてだね！":""}`);
+    document.getElementById("gnote").textContent = `シール ${ownedCount()} / ${STICKERS.length} しゅるい`;
+    document.getElementById("gbtns").innerHTML = `
+      <button class="btn blue" onclick="openBook()">📖 シール帳</button>
+      ${save.tickets?`<button class="btn gold shine" onclick="renderGacha()">🎰 もう一回（のこり${save.tickets}）</button>`:`<button class="btn gray" onclick="goHome()">ホームへ</button>`}`;
+  }, 450);
+}
+
+/* =========================================================
+   シール帳
+   ========================================================= */
+function openBook(){ show("book"); renderBook(); }
+function renderBook(){
+  const owned = ownedCount();
+  let html = `
+    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">📖 シール帳</div><div class="stat">${owned} / ${STICKERS.length}</div></div>
+    <div class="teacher-row">
+      ${teacherBox("sm")}
+      <div class="bubble" style="font-size:17px">${owned===STICKERS.length?"ぜんぶ集めたね！すごい！":`あと <b>${STICKERS.length-owned}しゅるい</b>！シールをタップすると、せつめいが読めるよ`}</div>
+    </div>
+    <div class="book-prog"><div style="width:${owned/STICKERS.length*100}%"></div></div>`;
+  for(const r of ["SR","R","N"]){
+    const list = STICKERS.filter(s=>s.r===r);
+    const have = list.filter(s=>save.stickers[s.id]).length;
+    html += `<div class="rar-label">${RARITY[r].stars} ${RARITY[r].name}（${have}/${list.length}）</div><div class="book-grid">`;
+    for(const st of list){
+      const n = save.stickers[st.id] || 0;
+      html += `<button class="stk-cell" ${n?`onclick="showSticker('${st.id}')"`:""} data-silent="${n?"":"1"}">
+        ${n>1?`<span class="stk-count">×${n}</span>`:""}
+        ${stickerHTML(st, !n)}
+        <div class="stk-name">${n?st.name:"？？？"}</div>
+      </button>`;
+    }
+    html += `</div>`;
+  }
+  html += `<div class="row" style="margin-top:20px"><button class="btn gray wide" onclick="goHome()">ホームへもどる</button></div>`;
+  document.getElementById("book").innerHTML = html;
+}
+function showSticker(id){
+  const st = STICKERS.find(s=>s.id===id);
+  showModal(`<div style="text-align:center">
+    ${stickerHTML(st, false, "big-stk")}
+    <h2>${st.name}</h2>
+    <div class="rv-rar">${RARITY[st.r].stars} ${RARITY[st.r].name} ・ ${save.stickers[id]}まい</div>
+    <div class="bubble" style="text-align:left;margin:14px 0">${esc(st.desc)}</div>
+    <button class="btn gray wide" onclick="closeModal()">とじる</button></div>`);
+  speak(st.desc);
 }
 
 renderHome();
