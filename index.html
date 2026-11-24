@@ -1083,8 +1083,53 @@ function openSettings(){
     ${sw("sfx","🔔 効果音")}
     ${sw("voice","🗣️ 先生の声")}
     ${sw("autoRead","📖 問題を自動で読み上げる")}
+    <h3 style="margin:18px 0 4px">🚚 進み具合のひっこし</h3>
+    <div class="small-note" style="text-align:left">べつのタブや べつの端末に、★・シール・マンガなどを そのまま うつせるよ</div>
+    <div class="row"><button class="btn blue" onclick="exportSave()">📤 進み具合をコピー</button><button class="btn gold" onclick="importSaveForm()">📥 進み具合をよみこむ</button></div>
     <div class="row"><button class="btn red" onclick="resetAll()">さいしょからやり直す</button></div>
     <div class="row"><button class="btn gray wide" onclick="closeModal()">とじる</button></div>`);
+}
+// 進み具合を1つの文字列（コード）にする／もどす
+const SAVE_CODE_HEAD = "RQ1:";
+const saveToCode = () => SAVE_CODE_HEAD + btoa(unescape(encodeURIComponent(JSON.stringify(save))));
+function codeToSave(code){
+  const c = String(code).replace(/\s+/g, "");
+  if(!c.startsWith(SAVE_CODE_HEAD)) return null;
+  try{
+    const obj = JSON.parse(decodeURIComponent(escape(atob(c.slice(SAVE_CODE_HEAD.length)))));
+    return obj && typeof obj==="object" && obj.stars ? obj : null;
+  }catch(e){ return null; }
+}
+async function exportSave(){
+  const code = saveToCode();
+  let copied = false;
+  try{ await navigator.clipboard.writeText(code); copied = true; }catch(e){}
+  showModal(`<h2>📤 進み具合をコピー</h2>
+    <div class="bubble" style="text-align:left;margin-bottom:10px">${copied
+      ? "コピーできたよ！ うつしたい ページで ⚙️ →「📥 進み具合をよみこむ」を おして、はりつけてね"
+      : "下の文字を ぜんぶ えらんで コピーしてね。うつしたい ページで ⚙️ →「📥 進み具合をよみこむ」に はりつけてね"}</div>
+    <textarea id="saveCode" readonly style="width:100%;height:120px;font-size:12px;border-radius:12px;padding:8px" onclick="this.select()">${code}</textarea>
+    <div class="small-note">★ ${totalStars()} ・ シール ${ownedCount()}しゅるい ・ おぼえた ${ALL_QS.filter(isMastered).length}問 ・ マンガ ${mangaOpen()}話</div>
+    <div class="row"><button class="btn gray wide" onclick="openSettings()">もどる</button></div>`);
+  SFX.ticket();
+}
+function importSaveForm(){
+  showModal(`<h2>📥 進み具合をよみこむ</h2>
+    <div class="bubble" style="text-align:left;margin-bottom:10px">コピーした文字を、ここに はりつけてね<br><small>※ いまのページの 進み具合は、よみこんだものに おきかわるよ</small></div>
+    <textarea id="saveIn" style="width:100%;height:120px;font-size:12px;border-radius:12px;padding:8px" placeholder="RQ1:……"></textarea>
+    <div id="saveErr" class="small-note" style="color:#e33"></div>
+    <div class="row"><button class="btn gray" onclick="openSettings()">もどる</button><button class="btn gold" onclick="importSave()">📥 よみこむ</button></div>`);
+}
+function importSave(){
+  const obj = codeToSave(document.getElementById("saveIn").value);
+  if(!obj){ document.getElementById("saveErr").textContent = "うまく よみこめなかったよ。コピーした文字を ぜんぶ はりつけてね"; SFX.wrong(); return; }
+  const stars = Object.values(obj.stars||{}).reduce((a,b)=>a+b,0);
+  const stk = Object.keys(obj.stickers||{}).length;
+  if(!confirm(`★ ${stars}・シール ${stk}しゅるい の進み具合を よみこみます。\nいまのページの進み具合は おきかわります。よいですか？`)) return;
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(obj)); }catch(e){}
+  save = loadSave(); persist();
+  closeModal(); renderHome(); SFX.clear(); confetti();
+  speak("ひっこし、かんりょう！つづきから がんばろうね", true);
 }
 function toggleSetting(k){ save.settings[k] = !save.settings[k]; persist(); openSettings(); }
 function resetAll(){
