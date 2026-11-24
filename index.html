@@ -323,6 +323,32 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 .stk-count{position:absolute;top:-4px;right:-4px;background:#ff5a5a;color:#fff;border-radius:12px;padding:1px 8px;font-size:13px;z-index:2}
 .big-stk{width:230px;margin:6px auto 10px}
 
+/* ===== マンガと本棚 ===== */
+.hub-card.span2{grid-column:1/-1}
+.shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.mbook{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px 14px;border-radius:8px 18px 18px 8px;
+  background:linear-gradient(90deg,rgba(0,0,0,.18) 0 10px,transparent 10px),var(--c);color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.18);text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.mbook:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.mbook.locked{background:linear-gradient(90deg,rgba(0,0,0,.08) 0 10px,transparent 10px),#d9dccb;color:#8a8f78;text-shadow:none}
+.mb-no{font-size:13px;opacity:.9}.mb-title{font-size:18px;line-height:1.3}.mb-icon{font-size:30px}
+.m-stage{position:relative;cursor:pointer;-webkit-user-select:none;user-select:none}
+.panel{position:relative;width:min(100%, calc((100vh - 230px) * 4 / 3));aspect-ratio:4/3;margin:0 auto;background:#fff;
+  border:5px solid #2a2a2a;border-radius:6px;overflow:hidden;animation:panelIn .35s ease;container-type:inline-size}
+@keyframes panelIn{from{opacity:0;transform:scale(.94)}}
+.panel svg{display:block;width:100%;height:100%}
+.mcap{position:absolute;left:0;top:0;background:#fff7c2;border:0 solid #2a2a2a;border-width:0 3px 3px 0;padding:.3em .8em;font-size:clamp(11px,2.8cqw,22px)}
+.mbub{position:absolute;background:#fff;border:3px solid #2a2a2a;border-radius:20px;padding:.25em .6em;font-size:clamp(12px,3.6cqw,28px);line-height:1.45;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.mbub rt{font-size:.5em}
+.m-num{position:absolute;top:-12px;right:max(0px,calc(50% - min(50%, (100vh - 230px) * 2 / 3)) - 6px);background:#2a2a2a;color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.m-hint{text-align:center;font-size:13px;color:var(--sub);margin-top:8px}
+.m-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+.m-nav .btn{min-width:130px}
+.m-dots{display:flex;gap:10px}
+.m-dots span{width:16px;height:16px;border-radius:50%;background:#e1e5cf}
+.m-dots span.done{background:#bfe39a}.m-dots span.on{background:#5cbf2a;transform:scale(1.25)}
+.m-end{text-align:center;padding:20px 0;animation:panelIn .35s ease}
+.m-end-title{font-size:40px;margin-bottom:16px;color:#c98b00}
+
 @media (max-width:560px){ .hub{grid-template-columns:1fr} .book-grid{grid-template-columns:repeat(3,1fr)} }
 @media (max-width:520px){
   .q-text{font-size:19px}.choice{font-size:18px}.teacher{width:100px}.teacher.sm{width:76px}
@@ -350,6 +376,9 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 <div id="gacha" class="screen"></div>
 <!-- シール帳 -->
 <div id="book" class="screen"></div>
+<!-- 本棚とマンガ -->
+<div id="shelf" class="screen"></div>
+<div id="manga" class="screen"></div>
 
 <div id="modal" class="modal"><div class="sheet" id="sheet"></div></div>
 <div id="feedback" class="feedback"><div class="inner" id="fbInner"></div></div>
@@ -578,12 +607,13 @@ function defaultSave(){
           wrong:{},     // 一度でもまちがえた問題
           gauge:0,      // ガチャゲージ（3でガチャ1回）
           tickets:0,    // まわせるガチャの回数
-          stickers:{}}; // 持っているシールと枚数
+          stickers:{},  // 持っているシールと枚数
+          manga:{gauge:0, open:1, seen:{}}}; // マンガゲージ（5で1話）・読める話の数（1話目は最初から）・読んだ話
 }
 function loadSave(){
   try{
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if(s){ const d = defaultSave(); return {...d, ...s, settings:{...d.settings, ...(s.settings||{})}}; }
+    if(s){ const d = defaultSave(); return {...d, ...s, settings:{...d.settings, ...(s.settings||{})}, manga:{...d.manga, ...(s.manga||{})}}; }
   }catch(e){}
   return defaultSave();
 }
@@ -963,6 +993,12 @@ function renderHome(){
       <button class="btn red" onclick="tapReview()" ${weak.length?"":"disabled"}>📒 ふくしゅうする</button>
       <div class="hub-sub">おぼえた問題：<b>${mastered}</b> / ${ALL_QS.length}（3回連続で正解すると「おぼえた！」）</div>
     </div>
+    <div class="hub-card span2">
+      <div class="hub-title">📚 みるく先生のマンガ ${unreadCount()?`<span class="stk-count" style="position:static">NEW ${unreadCount()}</span>`:""}</div>
+      ${mangaGaugeHTML()}
+      <div class="hub-sub">${mangaOpen()>=MANGA.length?"ぜんぶのマンガが読めるよ！":`「おぼえた！」を あと <b>${MANGA_STEP-save.manga.gauge}こ</b> ふやすと、つぎのマンガが読めるよ`}（${mangaOpen()} / ${MANGA.length}話）</div>
+      <button class="btn blue ${unreadCount()?"shine":""}" onclick="openShelf()">📚 本棚をひらく</button>
+    </div>
   </div>`;
   for(const ch of CHAPTERS){
     html += `<section class="chapter" style="--c:${ch.color}">
@@ -1341,7 +1377,7 @@ function judge(ok, userText="", opt={}){
     const m = Math.min(MASTER, Q.prev.m + 1);
     save.mastery[q.id] = m;
     justLearned = m===MASTER && Q.prev.m<MASTER;
-    if(justLearned) Q.learned.push(q);
+    if(justLearned){ Q.learned.push(q); Q.newManga = addMangaPoint(); }
   }else{
     save.mastery[q.id] = 0;
     save.wrong[q.id] = true;
@@ -1361,7 +1397,7 @@ function judge(ok, userText="", opt={}){
     const line = justLearned ? "おぼえたね！すごい！" : Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
     speak(line);
     showFeedback("good", `<div class="fb-title">⭕ ${line}</div>
-      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！</div>`:meterHTML(save.mastery[q.id])}
+      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}</div>`:meterHTML(save.mastery[q.id])}
       ${userText && opt.hand ? `<div class="fb-exp">よみとった字：「${esc(userText)}」</div>`:""}
       <div class="fb-exp">${esc(q.e||"")}</div>
       <button class="btn wide" onclick="afterAnswer()">つぎへ</button>`);
@@ -1392,7 +1428,7 @@ function overrideHand(){
   const m = Math.min(MASTER, Q.prev.m + 1);
   save.mastery[q.id] = m;
   if(!Q.prev.wrong) delete save.wrong[q.id];
-  if(m===MASTER && Q.prev.m<MASTER) Q.learned.push(q);
+  if(m===MASTER && Q.prev.m<MASTER){ Q.learned.push(q); addMangaPoint(); }
   persist();
   Q.xp += 10; SFX.correct(); xpPop("+10"); teacherMood("happy","jump"); speak("ごめんね、ちゃんと書けてたね！");
   afterAnswer();
@@ -1475,7 +1511,7 @@ function showClear(){
       <div id="resGauge">${gaugeHTML(gBefore, "big")}</div>
       <div id="ticketMsg" class="small-note" style="margin-top:8px">${ticket?"":`あと ${3-save.gauge} ステージクリアでガチャ！`}</div>
     </div>
-    ${Q.learned.length?`<div class="res-box"><div style="font-size:18px">🎉 新しくおぼえた言葉</div><div class="chips">${Q.learned.map(q=>`<span class="chip">${esc(q.a)}</span>`).join("")}</div></div>`:""}
+    ${Q.learned.length?`<div class="res-box"><div style="font-size:18px">🎉 新しくおぼえた言葉</div><div class="chips">${Q.learned.map(q=>`<span class="chip">${esc(q.a)}</span>`).join("")}</div><div style="margin-top:10px">📚 マンガゲージ</div>${mangaGaugeHTML()}${unreadCount()?`<button class="btn blue shine" style="margin-top:10px" onclick="openShelf()">📚 マンガを読む</button>`:""}</div>`:""}
     ${missedHTML()}
     <div class="row" id="resBtns">
       <button class="btn gray" onclick="goHome()">ホームへ</button>
@@ -1673,6 +1709,275 @@ function showSticker(id){
     <div class="bubble" style="text-align:left;margin:14px 0">${esc(st.desc)}</div>
     <button class="btn gray wide" onclick="closeModal()">とじる</button></div>`);
   speak(st.desc);
+}
+
+/* =========================================================
+   みるく先生の4コマ漫画（ごほうび）
+   「おぼえた！」が5つふえるごとに、次の1話が読める
+   ========================================================= */
+const MANGA_STEP = 5;
+const STK = id => STICKERS.find(s=>s.id===id) || {};
+// みるく先生（または仲間）を1人かく。x=左はし, w=はば, mood=happy/sad/wow, flip=左右反転, ground=足の位置
+function M(x, costume, opt={}){
+  const w = opt.w || 150, h = w*258/232;
+  const y = (opt.ground || 226) - h*0.96;
+  const base = costume ? STK(costume) : {};
+  const st = {...base, back:(base.back||"")+(opt.back||""), top:(base.top||"")+(opt.top||"")};
+  if(opt.mood==="happy") st.eyes = "happy";
+  if(opt.mood==="sad" || opt.mood==="wow"){
+    st.eyeColor = "transparent";
+    st.top = (opt.mood==="sad"
+      ? `<g fill="none" stroke="#2a2a2a" stroke-width="3.2" stroke-linecap="round"><path d="M71 102 q7 6 14 2"/><path d="M103 104 q7 4 14 -2"/></g>`
+      : `<g fill="#fff" stroke="#2a2a2a" stroke-width="2.6"><circle cx="78" cy="103" r="7"/><circle cx="110" cy="104" r="7"/></g><g fill="#2a2a2a"><circle cx="78" cy="103" r="2.6"/><circle cx="110" cy="104" r="2.6"/></g>`) + st.top;
+  }
+  if(opt.fluffy) st.back = `<ellipse cx="98" cy="96" rx="112" ry="100" fill="url(#fur)" stroke="#d9cc9a" stroke-width="3" stroke-dasharray="10 6"/>` + st.back;
+  const svg = stickerSVG(st).replace("<svg ", `<svg x="${x}" y="${y}" width="${w}" height="${h}" `);
+  return opt.flip ? `<g transform="translate(${2*x+w} 0) scale(-1 1)">${svg}</g>` : svg;
+}
+// 背景と小物
+const BG = (sky, ground, gy=210) => `<rect width="400" height="300" fill="${sky}"/><rect y="${gy}" width="400" height="${300-gy}" fill="${ground}"/>`;
+const SUN   = (x=350,y=40) => `<circle cx="${x}" cy="${y}" r="22" fill="#ffd86b"/>`;
+const CLOUD = (x,y) => `<g fill="#fff" opacity=".9"><ellipse cx="${x}" cy="${y}" rx="26" ry="11"/><ellipse cx="${x+18}" cy="${y-7}" rx="16" ry="10"/></g>`;
+const MOUNT = `<path d="M0 210 L70 120 L140 210Z M110 210 L200 100 L290 210Z M250 210 L330 130 L400 200 L400 210Z" fill="#b9d98c"/>`;
+const STALL = (x,c="#e85d5d") => `<g transform="translate(${x} 130)"><rect x="4" y="30" width="8" height="70" fill="#8a5a2b"/><rect x="88" y="30" width="8" height="70" fill="#8a5a2b"/><path d="M-6 34 L50 4 L106 34Z" fill="${c}"/><rect x="0" y="70" width="100" height="16" fill="#c08a4e"/></g>`;
+const SIGN  = (x,y,t,w=110) => `<g transform="translate(${x} ${y})"><rect x="${w/2-4}" y="30" width="8" height="60" fill="#8a5a2b"/><rect width="${w}" height="36" rx="4" fill="#fdf6e3" stroke="#8a5a2b" stroke-width="3"/><text x="${w/2}" y="25" font-size="18" text-anchor="middle" fill="#3a2a1a" font-weight="bold">${t}</text></g>`;
+const CASTLE= (x,y,s=1) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="0" y="70" width="120" height="50" fill="#9aa3ad"/><rect x="14" y="40" width="92" height="34" fill="#fff"/><path d="M0 44 L60 18 L120 44Z" fill="#4a5a6a"/><rect x="30" y="8" width="60" height="16" fill="#fff"/><path d="M20 12 L60 -14 L100 12Z" fill="#4a5a6a"/><g fill="#4a5a6a"><rect x="30" y="50" width="12" height="14"/><rect x="54" y="50" width="12" height="14"/><rect x="78" y="50" width="12" height="14"/></g></g>`;
+const FLAG  = (x,t,c) => `<g transform="translate(${x} 60)"><rect x="0" y="0" width="5" height="150" fill="#6b4a2a"/><rect x="5" y="4" width="50" height="70" fill="${c}"/><text x="30" y="52" font-size="34" text-anchor="middle" fill="#fff" font-weight="bold">${t}</text></g>`;
+const SEA   = `<rect y="150" width="400" height="150" fill="#7fc4ea"/><path d="M0 170 q20 -8 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/>`;
+const DEJIMA= `<path d="M120 240 Q200 196 300 240 L280 280 L140 280Z" fill="#e8d49a" stroke="#b89c5a" stroke-width="3"/><rect x="170" y="226" width="34" height="22" fill="#fff"/><path d="M166 228 L187 212 L208 228Z" fill="#b05a3a"/><rect x="230" y="226" width="34" height="22" fill="#fff"/><path d="M226 228 L247 212 L268 228Z" fill="#b05a3a"/>`;
+const SHIP  = (x,y) => `<g transform="translate(${x} ${y})"><path d="M0 30 L90 30 L76 50 L12 50Z" fill="#8a5a2b"/><rect x="42" y="-30" width="5" height="62" fill="#6b4a2a"/><path d="M48 -26 L80 0 L48 20Z" fill="#fff" stroke="#ccc"/><rect x="48" y="-34" width="20" height="10" fill="#e85d5d"/><rect x="48" y="-29" width="20" height="4" fill="#fff"/><rect x="48" y="-25" width="20" height="4" fill="#3a6ad9"/></g>`;
+const TEAHOUSE = `<g transform="translate(210 90)"><path d="M-14 40 L90 -10 L194 40Z" fill="#8f7a4a"/><rect x="0" y="40" width="180" height="96" fill="#e9dcb8" stroke="#8f7a4a" stroke-width="3"/><rect x="60" y="92" width="40" height="40" fill="#5a4a2a"/><rect x="120" y="60" width="40" height="30" fill="#fdf6e3" stroke="#8f7a4a" stroke-width="2"/></g>`;
+const BOWL  = (x,y) => `<g transform="translate(${x} ${y})"><path d="M0 0 Q18 26 36 0Z" fill="#5b6b3a"/><ellipse cx="18" cy="0" rx="18" ry="5" fill="#7fbf4a"/></g>`;
+const TATAMI= `<rect y="210" width="400" height="90" fill="#cfd89a"/><path d="M0 250 H400 M130 210 V300 M270 210 V300" stroke="#a9b46e" stroke-width="3"/>`;
+const PARASOL = `<g transform="translate(290 40)"><path d="M-70 60 Q0 -10 70 60Z" fill="#e85d5d"/><rect x="-3" y="20" width="6" height="150" fill="#6b4a2a"/></g><rect x="160" y="200" width="200" height="24" fill="#c0392b"/>`;
+const ROAD  = `<path d="M0 230 Q200 190 400 230 L400 300 L0 300Z" fill="#e9d6a8"/>`;
+const PINE  = x => `<g transform="translate(${x} 110)"><rect x="-5" y="40" width="10" height="70" fill="#7a5230"/><ellipse cx="0" cy="40" rx="34" ry="18" fill="#3f8f4f"/><ellipse cx="0" cy="18" rx="24" ry="14" fill="#4fa35f"/></g>`;
+const COIN  = (x,y) => `<g transform="translate(${x} ${y})"><circle r="11" fill="#f2c230" stroke="#c99a14" stroke-width="2"/><rect x="-4" y="-4" width="8" height="8" fill="#c99a14"/></g>`;
+const FIELD = `<rect y="190" width="400" height="110" fill="#e8c95a"/>${[0,1,2,3,4,5,6,7,8,9].map(i=>`<path d="M${i*42+10} 200 q6 -30 14 -40 M${i*42+18} 200 q2 -26 -6 -38" stroke="#c99a14" stroke-width="3" fill="none"/>`).join("")}`;
+const SENBA = (x,y) => `<g transform="translate(${x} ${y})"><rect x="0" y="0" width="110" height="14" fill="#8a5a2b"/>${[...Array(12)].map((_,i)=>`<rect x="${6+i*8.5}" y="-34" width="3" height="36" fill="#7d8597"/>`).join("")}<rect x="10" y="14" width="8" height="60" fill="#8a5a2b"/><rect x="92" y="14" width="8" height="60" fill="#8a5a2b"/></g>`;
+const KURA  = x => `<g transform="translate(${x} 70)"><path d="M-10 40 L70 10 L150 40Z" fill="#4a4a4a"/><rect x="0" y="40" width="140" height="110" fill="#fbfaf4" stroke="#bbb" stroke-width="2"/><rect y="118" x="0" width="140" height="32" fill="#4a4a4a"/><rect x="54" y="80" width="32" height="38" fill="#6b4a2a"/></g>`;
+const TAWARA = (x,y) => `<g transform="translate(${x} ${y})"><ellipse cx="0" cy="0" rx="28" ry="17" fill="#e8d49a" stroke="#b89c5a" stroke-width="2"/><path d="M-12 -16 V16 M12 -16 V16" stroke="#8a5a2b" stroke-width="3"/></g>`;
+const ONIGIRI = (x,y,s=1) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 -60 Q12 -60 58 30 Q60 46 40 46 L-40 46 Q-60 46 -58 30 Q-12 -60 0 -60Z" fill="#fff" stroke="#ddd" stroke-width="2"/><rect x="-26" y="14" width="52" height="32" fill="#2c3e2c"/></g>`;
+const PAN   = (x,y) => `<g transform="translate(${x} ${y})"><ellipse cx="0" cy="0" rx="34" ry="10" fill="#555"/><rect x="30" y="-4" width="40" height="8" rx="4" fill="#8a5a2b"/></g>`;
+const MOCHI = (x,y) => `<g transform="translate(${x} ${y})" fill="#fff" stroke="#e6dbb3" stroke-width="2"><ellipse cx="0" cy="0" rx="16" ry="11"/><ellipse cx="30" cy="0" rx="16" ry="11"/><ellipse cx="15" cy="-14" rx="16" ry="11"/></g>`;
+const DISH  = (x,y) => `<ellipse cx="${x}" cy="${y}" rx="26" ry="7" fill="#fff" stroke="#ccc" stroke-width="2"/>`;
+const PENCILS = (x,y) => `<g transform="translate(${x} ${y})">${[0,1,2,3].map(i=>`<g transform="rotate(${-20+i*12})"><rect x="-4" y="-50" width="8" height="46" fill="${["#f2c230","#e85d5d","#3a9ad9","#5cbf2a"][i]}"/><path d="M-4 -50 L0 -60 L4 -50Z" fill="#f3d8a8"/></g>`).join("")}</g>`;
+const BOARD = `<rect x="40" y="20" width="320" height="110" rx="6" fill="#2f5e46" stroke="#8a5a2b" stroke-width="8"/>`;
+const SCROLL= (x,y) => `<g transform="translate(${x} ${y})"><rect x="0" y="0" width="70" height="90" fill="#fdf6e3" stroke="#b89c5a" stroke-width="2"/><rect x="-6" y="-6" width="82" height="8" rx="4" fill="#8a5a2b"/><rect x="-6" y="88" width="82" height="8" rx="4" fill="#8a5a2b"/><path d="M14 16 H56 M14 32 H56 M14 48 H56 M14 64 H44" stroke="#555" stroke-width="3"/></g>`;
+const GATE  = `<g transform="translate(150 90)"><rect x="0" y="0" width="12" height="130" fill="#6b4a2a"/><rect x="118" y="0" width="12" height="130" fill="#6b4a2a"/><rect x="-10" y="-6" width="150" height="16" fill="#6b4a2a"/><text x="65" y="50" font-size="22" text-anchor="middle" fill="#6b4a2a" font-weight="bold">出島</text></g>`;
+const BUNDLE= (x,y) => `<g transform="translate(${x} ${y})"><circle r="22" fill="#5fa8d3"/><path d="M-6 -20 q6 -14 14 0" stroke="#3a7aa8" stroke-width="5" fill="none"/>${DOTS([[-8,0,3],[8,6,3],[2,-8,3]],"#fff")}</g>`;
+// まんがの「記号」
+const SWEAT = (x,y) => `<path transform="translate(${x} ${y})" d="M0 0 q8 12 0 18 q-8 -6 0 -18z" fill="#8fd0ff" stroke="#5aa8e0" stroke-width="1.5"/>`;
+const NOTE  = (x,y) => `<text x="${x}" y="${y}" font-size="30" fill="#ff7aa8">♪</text>`;
+const MARK  = (x,y,t,c="#ff5a5a",s=40) => `<text x="${x}" y="${y}" font-size="${s}" font-weight="bold" fill="${c}" stroke="#fff" stroke-width="2" paint-order="stroke">${t}</text>`;
+const SPARK = (x,y) => STAR(x,y,1.4,"#ffd34d");
+const ANGER = (x,y) => `<path transform="translate(${x} ${y})" d="M-10 -4 q6 0 6 -6 M4 -10 q0 6 6 6 M10 4 q-6 0 -6 6 M-4 10 q0 -6 -6 -6" stroke="#e33" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+const LINES3 = (x,y) => `<path transform="translate(${x} ${y})" d="M0 0 l-14 -10 M4 -6 l-6 -16 M10 -8 l4 -16" stroke="#555" stroke-width="3" stroke-linecap="round"/>`;
+const XMARK = (x,y) => `<path transform="translate(${x} ${y})" d="M-26 -26 L26 26 M26 -26 L-26 26" stroke="#e33" stroke-width="12" stroke-linecap="round"/>`;
+
+// 1話 = 4コマ。p:[{s:絵, b:[[左%,上%,はば%,"セリフ"],...], cap:"ナレーション"}], note: 最後に出る「まめちしき」
+const MANGA = [
+ {ch:29, title:"らくいち・らくざ", p:[
+  {cap:"{安土|あづち}の町で…", s:BG("#cdeeff","#f1dfb4")+SUN()+STALL(10)+STALL(290,"#3a9ad9")+M(140,"nobunaga"),
+   b:[[4,4,62,"今日から{楽市|らくいち}・{楽座|らくざ}じゃ！ だれでも自由に{商売|しょうばい}してよいぞ！"]]},
+  {s:BG("#cdeeff","#f1dfb4")+STALL(150,"#5cbf2a")+M(30,"chonin",{mood:"happy"})+M(250,"hyakusho",{mood:"happy",flip:1})+NOTE(150,90)+NOTE(230,70),
+   b:[[2,4,46,"{座|ざ}に入らなくても お店が出せる！"],[52,4,46,"{税|ぜい}もかからないって！"]]},
+  {s:BG("#fff3d6","#f1dfb4")+STALL(150,"#ff9ab5")+M(150,"chef",{mood:"happy"})+MOCHI(170,215)+MOCHI(230,215)+SPARK(120,110)+SPARK(290,90),
+   b:[[2,4,56,"では わたしも、おもち屋さんを 開店！"]]},
+  {s:BG("#fff3d6","#f1dfb4")+M(120,"chef",{w:140,fluffy:1})+DISH(110,250)+DISH(300,250)+SWEAT(270,110)+M(300,"chonin",{w:90,flip:1})+MARK(350,110,"？","#3a9ad9"),
+   b:[[2,4,60,"…売る前に、ぜんぶ 食べちゃった"]]}],
+  note:"{楽市|らくいち}・{楽座|らくざ}：{織田信長|おだのぶなが}が{安土|あづち}の{城下町|じょうかまち}などで、市の税をなくし、{座|ざ}の{特権|とっけん}をなくして、だれでも自由に商売できるようにしたよ。"},
+
+ {ch:29, title:"かたながり", p:[
+  {cap:"1588年", s:BG("#e7f4d8","#d9c79a")+MOUNT+SIGN(250,100,"刀狩令")+M(70,"samurai"),
+   b:[[2,4,64,"{百姓|ひゃくしょう}から 刀や やり、鉄砲を 取り上げるのじゃ！"]]},
+  {s:BG("#e7f4d8","#d9c79a")+`<rect x="160" y="180" width="80" height="46" fill="#8a5a2b"/>`+`<g transform="rotate(-30 200 170)"><rect x="196" y="110" width="8" height="80" fill="#3a3a3a"/></g>`+M(20,"samurai")+M(260,"hyakusho",{mood:"sad",flip:1}),
+   b:[[2,4,48,"これで{一揆|いっき}は おこせないな"],[54,4,44,"はい、刀です…"]]},
+  {cap:"そして 教室で…", s:BG("#fdf6e3","#e9d6a8")+BOARD+M(40,"",{mood:"happy"})+M(250,"chonin",{w:100,mood:"wow",flip:1})+PENCILS(130,230),
+   b:[[2,4,48,"では、えんぴつも 集めまーす"],[62,4,30,"えっ！？"]]},
+  {s:BG("#fdf6e3","#e9d6a8")+BOARD+M(40,"")+SWEAT(150,110)+PENCILS(160,240)+M(250,"chonin",{w:100,mood:"sad",flip:1}),
+   b:[[56,4,42,"…テストが 書けないよ〜"],[2,4,50,"えんぴつ狩りは やめておこう"]]}],
+  note:"{刀狩|かたながり}：{豊臣秀吉|とよとみひでよし}が、{一揆|いっき}を防ぐために百姓から武器を取り上げたよ。{太閤検地|たいこうけんち}とあわせて、武士と百姓の身分がはっきり分かれた（{兵農分離|へいのうぶんり}）。"},
+
+ {ch:29, title:"お茶の時間", p:[
+  {s:BG("#eef3e2","#cfd89a")+TATAMI+M(130,"rikyu")+BOWL(250,200),
+   b:[[2,4,60,"{千利休|せんのりきゅう}です。{茶の湯|ちゃのゆ}で おもてなしを しましょう"]]},
+  {s:BG("#dff0ff","#a8d08a")+PINE(70)+TEAHOUSE+M(20,"rikyu",{w:100}),
+   b:[[2,4,64,"{茶室|ちゃしつ}の入り口は 小さいの。だれでも 頭を下げて 入るのよ"]]},
+  {s:BG("#dff0ff","#a8d08a")+TEAHOUSE+M(214,"",{w:130,mood:"sad"})+SWEAT(320,120)+SWEAT(205,130),
+   b:[[2,4,50,"…まるくて 入れない"]]},
+  {s:BG("#dff0ff","#a8d08a")+PARASOL+M(170,"",{w:110,mood:"happy"})+BOWL(285,200)+M(20,"rikyu",{w:110,mood:"happy"})+NOTE(140,110),
+   b:[[44,4,54,"お外で飲んでも おいしいね！"],[2,4,40,"それも また よし"]]}],
+  note:"{千利休|せんのりきゅう}：{堺|さかい}の商人で、{茶の湯|ちゃのゆ}を{茶道|さどう}として{大成|たいせい}したよ。この時代の、はなやかで力強い文化を{桃山文化|ももやまぶんか}というんだ。"},
+
+ {ch:30, title:"天下分け目", p:[
+  {cap:"1600年 {関ヶ原|せきがはら}", s:BG("#ffe6cc","#c9b27a")+FLAG(30,"東","#3a6ad9")+FLAG(320,"西","#c0392b")+M(140,"samurai"),
+   b:[[18,4,64,"{天下分け目|てんかわけめ}の {関ヶ原|せきがはら}の戦いじゃ！"]]},
+  {s:BG("#ffe6cc","#c9b27a")+M(10,"shogun")+M(270,"samurai",{flip:1})+MARK(180,140,"VS","#e33",44),
+   b:[[2,4,48,"{東軍|とうぐん}の大将、{徳川家康|とくがわいえやす}じゃ"],[52,4,46,"{西軍|せいぐん}の{石田三成|いしだみつなり}だ！"]]},
+  {s:BG("#ffe6cc","#c9b27a")+FLAG(30,"東","#3a6ad9")+FLAG(320,"西","#c0392b")+M(140,"",{mood:"wow"})+MARK(110,110,"？","#3a9ad9")+MARK(260,90,"？","#3a9ad9"),
+   b:[[14,4,72,"…わたしは どっちの軍だっけ？"]]},
+  {cap:"東軍の勝ち！", s:BG("#fff2b8","#c9b27a")+SUN(60,40)+M(10,"shogun",{mood:"happy"})+FLAG(300,"東","#3a6ad9")+M(220,"",{w:110,mood:"happy"})+SWEAT(320,130),
+   b:[[48,4,50,"はじめから 東軍でーす！"],[2,4,42,"調子が いいのう"]]}],
+  note:"{関ヶ原の戦い|せきがはらのたたかい}（1600年）で{徳川家康|とくがわいえやす}が勝ち、1603年に{征夷大将軍|せいいたいしょうぐん}になって、{江戸幕府|えどばくふ}を開いたよ。"},
+
+ {ch:30, title:"おしろのルール", p:[
+  {s:BG("#fff6d6","#e2d2a8")+M(40,"shogun")+SCROLL(250,110),
+   b:[[2,4,62,"大名は {武家諸法度|ぶけしょはっと}を 守ること！"]]},
+  {s:BG("#fff6d6","#e2d2a8")+SCROLL(30,100)+M(220,"daimyo",{mood:"wow",flip:1})+SWEAT(330,120),
+   b:[[2,4,60,"お城を 勝手に 直しては いけない！"],[40,26,58,"大名どうし 勝手に 結婚しても いけない！"]]},
+  {s:BG("#dff0ff","#a8d08a")+CASTLE(200,70,1.4)+STAR(240,130,1.6,"#ff7aa8")+STAR(300,110,1.6,"#ffd34d")+M(40,"daimyo",{mood:"happy"})+NOTE(170,120),
+   b:[[2,4,54,"ちょっとだけ… シールで かわいくしよう♪"]]},
+  {s:BG("#dff0ff","#a8d08a")+CASTLE(250,80,1.1)+STAR(280,130,1.2,"#ff7aa8")+M(20,"shogun")+ANGER(110,60)+M(230,"daimyo",{w:110,mood:"sad",flip:1})+SWEAT(330,120),
+   b:[[2,4,30,"こらー！"],[44,4,54,"シールは 修理じゃ ないです〜"]]}],
+  note:"{武家諸法度|ぶけしょはっと}：江戸幕府が、大名を取りしまるために出した決まり。決まりを破った大名は、{領地|りょうち}を取り上げられることもあったよ。"},
+
+ {ch:30, title:"江戸まで 何キロ？", p:[
+  {cap:"3代将軍 {徳川家光|とくがわいえみつ}のころ", s:BG("#e6f3ff","#d9c79a")+CASTLE(250,80)+M(40,"daimyo"),
+   b:[[2,4,64,"1年おきに 江戸と 領地を 行ったり来たり…{参勤交代|さんきんこうたい}じゃ"]]},
+  {s:BG("#e6f3ff","#a8d08a")+ROAD+PINE(360)+M(20,"ashigaru",{w:95})+M(130,"daimyo",{w:105,mood:"sad"})+M(250,"ashigaru",{w:95})+COIN(110,100)+COIN(250,80)+COIN(360,90),
+   b:[[18,4,64,"行列は お金が かかる〜"]]},
+  {s:BG("#ffe6cc","#e9d6a8")+ROAD+SIGN(240,100,"江戸まで 100里",130)+M(50,"daimyo",{mood:"sad"})+SWEAT(160,110)+LINES3(70,190),
+   b:[[2,4,60,"足が みじかいから 進まない…"]]},
+  {cap:"やっと江戸！", s:BG("#e6f3ff","#d9c79a")+CASTLE(230,70,1.2)+M(40,"daimyo",{mood:"wow"})+MARK(160,100,"！"),
+   b:[[2,4,60,"着いた！… え、来年また 帰るの！？"]]}],
+  note:"{参勤交代|さんきんこうたい}：{徳川家光|とくがわいえみつ}が{武家諸法度|ぶけしょはっと}に加えた制度。行列や江戸でのくらしに大金がかかり、大名の力は弱まったよ。"},
+
+ {ch:31, title:"出島に行きたい", p:[
+  {cap:"{鎖国|さこく}のはじまり", s:BG("#fff6d6","#e2d2a8")+M(130,"shogun"),
+   b:[[2,4,64,"キリスト教は 禁止！ 外国との 行き来も しぼるぞ"]]},
+  {s:BG("#cdeeff","#7fc4ea")+SEA+DEJIMA+SHIP(40,160)+M(250,"dutch",{w:100,ground:236,mood:"happy"}),
+   b:[[2,4,70,"オランダと中国だけ、{長崎|ながさき}で 貿易できます"]]},
+  {s:BG("#fff3d6","#f1dfb4")+M(120,"",{mood:"happy"})+BUNDLE(270,190)+NOTE(90,100)+NOTE(270,90),
+   b:[[2,4,60,"わたしも 出島に 遊びに行こうっと♪"]]},
+  {s:BG("#cdeeff","#e8d49a")+GATE+M(150,"ashigaru",{w:120})+XMARK(215,60)+M(10,"",{w:110,mood:"sad"})+M(290,"dutch",{w:90,flip:1}),
+   b:[[42,30,56,"勝手に 入っては いけません！"],[2,4,40,"…がっかり"]]}],
+  note:"{鎖国|さこく}：キリスト教を禁止し、貿易を幕府が管理したしくみ。オランダとは長崎の{出島|でじま}で、中国とは長崎で貿易したよ。"},
+
+ {ch:31, title:"ふわふわの道具", p:[
+  {s:BG("#dff0ff","#e8c95a",190)+SUN(60,40)+FIELD+M(130,"hyakusho"),
+   b:[[2,4,66,"新しい農具が いっぱい！{備中|びっちゅう}ぐわに {千歯|せんば}こき！"]]},
+  {s:BG("#fff6d6","#e2d2a8")+SENBA(200,150)+M(30,"hyakusho",{mood:"happy"})+`<path d="M230 110 q20 -30 50 -10" stroke="#c99a14" stroke-width="6" fill="none"/>`+DOTS([[240,240,4],[256,246,4],[270,238,4],[284,248,4]],"#fff"),
+   b:[[2,4,64,"{稲|いね}から お米をとるのが はやーい！"]]},
+  {s:BG("#fff6d6","#e2d2a8")+SENBA(40,150)+M(170,"",{mood:"happy"})+NOTE(300,100),
+   b:[[30,4,68,"これ、毛づくろいに ちょうどいいかも…"]]},
+  {s:BG("#fff6d6","#e2d2a8")+M(30,"",{w:150,fluffy:1,mood:"happy"})+SPARK(40,60)+SPARK(200,70)+M(260,"hyakusho",{w:100,mood:"happy",flip:1}),
+   b:[[2,4,50,"ふわっふわに なっちゃった"],[60,30,38,"あははは！"]]}],
+  note:"江戸時代には{新田開発|しんでんかいはつ}が進み、{備中|びっちゅう}ぐわ（深く耕す）や{千歯|せんば}こき（{脱穀|だっこく}）などの農具が広まって、米のとれ高がふえたよ。"},
+
+ {ch:31, title:"天下の台所", p:[
+  {s:BG("#e6f3ff","#d9c79a")+KURA(230)+M(40,"chonin"),
+   b:[[2,4,64,"{大阪|おおさか}は「{天下の台所|てんかのだいどころ}」と よばれたんだよ"]]},
+  {s:BG("#e6f3ff","#d9c79a")+KURA(20)+TAWARA(220,200)+TAWARA(280,200)+TAWARA(250,176)+TAWARA(340,200)+M(240,"chonin",{w:90,ground:160,flip:1}),
+   b:[[2,4,64,"全国の {年貢米|ねんぐまい}や 特産物が {蔵屋敷|くらやしき}に 集まるんだ"]]},
+  {s:BG("#fff3d6","#f1dfb4")+M(130,"chef",{mood:"happy"})+PAN(110,200)+SPARK(110,80)+SPARK(290,70),
+   b:[[2,4,64,"台所なら、お料理 しなくちゃ！"]]},
+  {s:BG("#fff3d6","#f1dfb4")+ONIGIRI(150,170,1.4)+M(240,"chef",{w:110,mood:"happy"})+M(10,"chonin",{w:90,mood:"wow"})+SWEAT(100,110),
+   b:[[2,4,50,"…そういう意味じゃ ないよ"],[60,30,38,"おいしいよ？"]]}],
+  note:"大阪は商業の中心で「{天下の台所|てんかのだいどころ}」。江戸は「{将軍|しょうぐん}のおひざもと」、京都は朝廷がある文化の中心。この3つを{三都|さんと}というよ。"},
+];
+
+// ---- ゲージ ----
+const mangaOpen = () => Math.min(save.manga.open, MANGA.length);
+// 「おぼえた！」が1つふえたら呼ぶ。新しい話が読めるようになったら true
+function addMangaPoint(){
+  const g = save.manga;
+  if(g.open >= MANGA.length) return false;
+  g.gauge++;
+  if(g.gauge >= MANGA_STEP){ g.gauge = 0; g.open++; return true; }
+  return false;
+}
+function mangaGaugeHTML(){
+  const full = mangaOpen() >= MANGA.length;
+  return `<div class="gauge mg">${[...Array(MANGA_STEP)].map((_,i)=>`<span class="${full||i<save.manga.gauge?"on":""}"></span>`).join("")}</div>`;
+}
+const unreadCount = () => MANGA.slice(0, mangaOpen()).filter((_,i)=>!save.manga.seen[i]).length;
+
+// ---- 本棚 ----
+function openShelf(){ show("shelf"); renderShelf(); }
+function renderShelf(){
+  const open = mangaOpen();
+  const full = open >= MANGA.length;
+  let html = `
+    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">📚 本棚</div><div class="stat">${open} / ${MANGA.length}</div></div>
+    <div class="teacher-row">
+      ${teacherBox("sm")}
+      <div class="bubble" style="font-size:17px">${full?"ぜんぶ読めるようになったね！何回でも読んでね":`「おぼえた！」を あと <b>${MANGA_STEP-save.manga.gauge}こ</b> ふやすと、つぎのマンガが読めるよ`}</div>
+    </div>
+    ${mangaGaugeHTML()}`;
+  for(const ch of CHAPTERS){
+    html += `<div class="rar-label">第${ch.id}回 ${ch.title}</div><div class="shelf">`;
+    MANGA.forEach((m,i)=>{
+      if(m.ch!==ch.id) return;
+      const ok = i < open, seen = save.manga.seen[i];
+      html += `<button class="mbook ${ok?"":"locked"}" style="--c:${ch.color}" ${ok?`onclick="openManga(${i})"`:`data-silent="1"`}>
+        ${ok&&!seen?`<span class="stk-count">NEW</span>`:""}
+        <span class="mb-no">第${i+1}話</span>
+        <span class="mb-title">${ok?m.title:"？？？"}</span>
+        <span class="mb-icon">${ok?"📖":"🔒"}</span>
+      </button>`;
+    });
+    html += `</div>`;
+  }
+  html += `<div class="row" style="margin-top:20px"><button class="btn gray wide" onclick="goHome()">ホームへもどる</button></div>`;
+  document.getElementById("shelf").innerHTML = html;
+}
+
+// ---- 読む画面 ----
+let MV = null; // {i: 何話目, k: 何コマ目（4でおしまい）}
+SFX.page = () => { tone(520,0,.08,"sine",.12,900); tone(900,.05,.08,"sine",.08,1300); };
+function openManga(i){ MV = {i, k:0}; show("manga"); renderMangaFrame(); }
+function mangaGo(d){
+  if(!MV) return;
+  const k = MV.k + d;
+  if(k < 0 || k > 4) return;
+  MV.k = k; SFX.page(); renderMangaFrame();
+}
+function panelHTML(p){
+  return `<div class="panel">
+    <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">${p.s}</svg>
+    ${p.cap?`<div class="mcap">${ruby(p.cap)}</div>`:""}
+    ${p.b.map(([x,y,w,t])=>`<div class="mbub" style="left:${x}%;top:${y+(p.cap?9:0)}%;width:${w}%">${ruby(t)}</div>`).join("")}
+  </div>`;
+}
+function renderMangaFrame(){
+  const m = MANGA[MV.i], ch = CHAPTERS.find(c=>c.id===m.ch);
+  const el = document.getElementById("manga");
+  let body;
+  if(MV.k < 4){
+    const p = m.p[MV.k];
+    body = `<div class="m-stage" onclick="mangaTap(event)">
+        ${panelHTML(p)}
+        <div class="m-num">${MV.k+1}</div>
+      </div>
+      <div class="m-hint">◀ 左をタッチでもどる　｜　右をタッチで すすむ ▶</div>`;
+    if(MV.k === 3 && !save.manga.seen[MV.i]){ save.manga.seen[MV.i] = true; persist(); }
+    speak(p.b.map(b=>spoken(b[3])).join("。"));
+  }else{
+    body = `<div class="m-end">
+        <div style="display:flex;justify-content:center">${teacherBox()}</div>
+        <div class="m-end-title">おしまい</div>
+        <div class="bubble" style="text-align:left"><div class="tname">💡 まめちしき</div>${ruby(m.note)}</div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn blue" onclick="openManga(${MV.i})">🔁 もう一回</button>
+          <button class="btn gold" onclick="openShelf()">📚 本棚へ</button>
+        </div>
+      </div>`;
+    speak(spoken(m.note));
+  }
+  el.innerHTML = `
+    <div class="quiz-top"><button class="quit" onclick="speechSynthesis.cancel();openShelf()">✕</button>
+      <div class="g-title" style="color:${ch.color}">第${MV.i+1}話「${m.title}」</div><div style="width:40px"></div></div>
+    ${body}
+    <div class="m-nav">
+      <button class="btn gray" onclick="mangaGo(-1)" ${MV.k===0?"disabled":""}>◀ もどる</button>
+      <div class="m-dots">${[0,1,2,3].map(i=>`<span class="${i===MV.k?"on":i<MV.k?"done":""}"></span>`).join("")}</div>
+      <button class="btn blue" onclick="mangaGo(1)" ${MV.k===4?"disabled":""}>${MV.k===3?"おしまい ▶":"すすむ ▶"}</button>
+    </div>`;
+}
+function mangaTap(e){
+  const r = e.currentTarget.getBoundingClientRect();
+  mangaGo(e.clientX - r.left < r.width/2 ? -1 : 1);
 }
 
 renderHome();
