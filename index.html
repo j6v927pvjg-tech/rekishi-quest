@@ -421,6 +421,9 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 .ex-stamp{display:inline-block;font-size:24px;font-weight:bold;border:4px solid currentColor;border-radius:14px;padding:4px 16px;transform:rotate(-6deg);margin:8px 0}
 .ex-stamp.s100{color:#e33}.ex-stamp.s80{color:#e88a1a}.ex-stamp.s60{color:#3a9ad9}.ex-stamp.s0{color:#7a8a5a}
 .ex-reward{font-size:20px;font-weight:bold;margin-top:6px}
+.ex-break{font-size:15px;color:#666;margin-top:2px}
+.ring.exam-all{background:conic-gradient(#f2c230 calc(var(--p)*1%),#e9ecdb 0)}
+.node.boss.exam-all{background:linear-gradient(#fff6c8,#ffe38a);border-color:#c99a14}
 .ex-review{display:flex;flex-direction:column;gap:10px}
 .ex-row{background:#fff;border-radius:14px;padding:12px 14px;font-size:16px;line-height:1.6;border-left:8px solid #8fd06a}
 .ex-row.ng{border-left-color:#ff7a7a;background:#fff6f6}
@@ -1244,6 +1247,7 @@ function renderHome(){
     html += examNodeHTML(ch);
     html += `</div></section>`;
   }
+  html += allExamHTML();
   html += `<p class="small-note">クリアしたステージも、何回でも遊べるよ。黄色いリングが満タンになるまでがんばろう！</p>`;
   el.innerHTML = html;
 }
@@ -1603,7 +1607,7 @@ function judge(ok, userText="", opt={}){
     const line = justLearned ? "おぼえたね！すごい！" : Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
     speak(line);
     showFeedback("good", `<div class="fb-title">⭕ ${line}</div>
-      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}${Q.newExam?"<br>📝 本番テストが出てきたよ！":""}</div>`:meterHTML(save.mastery[q.id])}
+      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}${Q.newExam?"<br>📝 本番テストが出てきたよ！"+(allReady()?"<br>🏆 総まとめテストも出てきたよ！":""):""}</div>`:meterHTML(save.mastery[q.id])}
       ${userText && opt.hand ? `<div class="fb-exp">よみとった字：「${esc(userText)}」</div>`:""}
       <div class="fb-exp">${esc(q.e||"")}</div>
       <button class="btn wide" onclick="afterAnswer()">つぎへ</button>`);
@@ -2678,96 +2682,135 @@ function quitChallenge(){
 
 /* =========================================================
    本番テスト（章の問題をぜんぶ「おぼえた」にすると出てくる）
-   20問 × 5点 = 100点満点 ・ 制限時間10分
+   ・章ごと：20問 × 5点 = 100点 ・ 4分
+   ・総まとめ（3つの回ぜんぶ）：25問 × 4点 = 100点 ・ 5分
    答えている間は正解かどうか出さない（本物のテストと同じ）
+   💎 = 点数 × 3 ＋ 時間ボーナス（残り秒 × 点数 ÷ 100）
    ========================================================= */
-const EXAM_N = 20, EXAM_CQ = 6, EXAM_SEC = 600;
 const chapterQs  = ch => ch.stages.flatMap(s=>s.qs);
 const examReady  = chId => chapterQs(CHAPTERS.find(c=>c.id===chId)).every(isMastered);
-const examRec    = chId => (save.exam = save.exam || {})[chId] || {best:null, tries:0, got100:false};
-let EX = null; // {ch, items:[{q, opts, ans, kind}], i, end, timer}
+const allReady   = () => CHAPTERS.every(c=>examReady(c.id));
+const examRec    = key => (save.exam = save.exam || {})[key] || {best:null, tries:0, got100:false};
+const toBasic = q => ({q:q.q, a:q.a, e:q.e, kind:"一問一答", opts:shuffle([q.a, ...q.d.slice(0,3)])});
+const toTest  = q => ({q:q.q, a:q.a, e:q.e, kind:"テスト問題・"+q.k, opts:shuffle([q.a, ...q.d])});
+// テストの設定（key は章の番号か "all"）
+function examCfg(key){
+  if(key==="all") return {key, title:"🏆 総まとめテスト", sub:"第29回〜第31回 ぜんぶ", color:"#c99a14", n:25, pt:4, sec:300,
+    build(){
+      const cqN = shuffle([3,2,2]);
+      const basic = CHAPTERS.flatMap(ch=>shuffle([...chapterQs(ch)]).slice(0,6).map(q=>({...toBasic(q), ch:ch.id})));
+      const test  = CHAPTERS.flatMap((ch,k)=>shuffle(CQ.filter(q=>q.ch===ch.id)).slice(0,cqN[k]).map(q=>({...toTest(q), ch:ch.id})));
+      return [...shuffle(basic), ...shuffle(test)];
+    }};
+  const ch = CHAPTERS.find(c=>c.id===key);
+  return {key, title:`📝 第${ch.id}回 本番テスト`, sub:`第${ch.id}回 ${ch.title}`, color:ch.color, n:20, pt:5, sec:240,
+    build(){
+      return [...shuffle([...chapterQs(ch)]).slice(0,14).map(toBasic), ...shuffle(CQ.filter(q=>q.ch===key)).slice(0,6).map(toTest)];
+    }};
+}
+const examKey = k => k==="all" ? "all" : +k;
+let EX = null; // {cfg, items, ans, i, end, timer}
 
 function examNodeHTML(ch){
   const pool = chapterQs(ch), m = pool.filter(isMastered).length;
   const ok = m === pool.length, rec = examRec(ch.id);
   return `<div class="node-wrap">
     <div class="ring boss exam" style="--p:${Math.round(m/pool.length*100)}">
-      <button class="node boss exam ${ok?"":"locked"} ${ok&&rec.best===null?"next":""}" onclick="tapExam(${ch.id})">
+      <button class="node boss exam ${ok?"":"locked"} ${ok&&rec.best===null?"next":""}" onclick="tapExam('${ch.id}')">
         ${ok&&rec.best===null?`<span class="start-tag">NEW！</span>`:""}${ok?"📝":"🔒"}
       </button>
     </div>
     <div class="node-label">📝 本番テスト</div>
-    <div class="node-sub">${ok?(rec.best===null?"100点満点・10分":`ベスト ${rec.best}点${rec.best===100?" 💮":""}`):`おぼえた ${m}/${pool.length}`}</div>
+    <div class="node-sub">${ok?(rec.best===null?"100点満点・4分":`ベスト ${rec.best}点${rec.best===100?" 💮":""}`):`おぼえた ${m}/${pool.length}`}</div>
   </div>`;
 }
-function tapExam(chId){
-  const ch = CHAPTERS.find(c=>c.id===chId);
-  const pool = chapterQs(ch), left = pool.filter(q=>!isMastered(q)).length;
+// ホームの最後に出す「総まとめテスト」のカード
+function allExamHTML(){
+  const m = ALL_QS.filter(isMastered).length, ok = allReady(), rec = examRec("all");
+  return `<section class="chapter" style="--c:#c99a14">
+    <div class="ch-head"><div class="ch-num">第29回〜第31回 ぜんぶ</div><div class="ch-title">🏆 総まとめテスト</div></div>
+    <div class="path"><div class="node-wrap">
+      <div class="ring boss exam-all" style="--p:${Math.round(m/ALL_QS.length*100)}">
+        <button class="node boss exam-all ${ok?"":"locked"} ${ok&&rec.best===null?"next":""}" onclick="tapExam('all')">
+          ${ok&&rec.best===null?`<span class="start-tag">NEW！</span>`:""}${ok?"🏆":"🔒"}
+        </button>
+      </div>
+      <div class="node-label">🏆 総まとめテスト</div>
+      <div class="node-sub">${ok?(rec.best===null?"25問・100点満点・5分":`ベスト ${rec.best}点${rec.best===100?" 💮":""}`):`3つの回の問題を ぜんぶおぼえると出てくるよ（おぼえた ${m}/${ALL_QS.length}）`}</div>
+    </div></div>
+  </section>`;
+}
+function tapExam(k){
+  const key = examKey(k);
+  const left = key==="all" ? ALL_QS.filter(q=>!isMastered(q)).length
+                           : chapterQs(CHAPTERS.find(c=>c.id===key)).filter(q=>!isMastered(q)).length;
   if(left){
     teacherMood(null,"shake");
-    document.getElementById("greet").textContent = `この回の問題をぜんぶ「おぼえた！」にすると、本番テストが出てくるよ。あと${left}問！`;
+    document.getElementById("greet").textContent = key==="all"
+      ? `3つの回の問題をぜんぶ「おぼえた！」にすると、総まとめテストが出てくるよ。あと${left}問！`
+      : `この回の問題をぜんぶ「おぼえた！」にすると、本番テストが出てくるよ。あと${left}問！`;
+    window.scrollTo({top:0, behavior:"smooth"});
     return;
   }
-  const rec = examRec(chId);
+  const cfg = examCfg(key), rec = examRec(key);
   showModal(`<div style="text-align:center">
-    <h2>📝 本番テスト</h2>
-    <div style="color:${ch.color};font-weight:bold">第${ch.id}回 ${ch.title}</div>
+    <h2>${cfg.title}</h2>
+    <div style="color:${cfg.color};font-weight:bold">${cfg.sub}</div>
     <div class="ex-rules">
-      <div>📄 <b>${EXAM_N}問</b>（1問5点）で <b>100点満点</b></div>
-      <div>⏱️ 制限時間は <b>${EXAM_SEC/60}分</b>。時間になると自動で提出</div>
+      <div>📄 <b>${cfg.n}問</b>（1問${cfg.pt}点）で <b>100点満点</b></div>
+      <div>⏱️ 制限時間は <b>${cfg.sec/60}分</b>。時間になると自動で提出</div>
       <div>🤫 答えの正解・まちがいは、<b>提出するまでわからない</b>よ</div>
       <div>🔁 前の問題にもどって、答えを直してもOK</div>
-      <div>💎 点数の半分の💎がもらえる。はじめての100点でチケット1枚！</div>
+      <div>💎 <b>点数×3</b>の💎＋<b>早く出すほど時間ボーナス</b>！ はじめての100点でチケット1枚</div>
     </div>
     ${rec.best!==null?`<div class="small-note">これまでのベスト：<b>${rec.best}点</b>（${rec.tries}回受けた）</div>`:""}
-    <button class="btn red wide shine" onclick="startExam(${chId})">はじめ！</button>
+    <button class="btn red wide shine" onclick="startExam('${key}')">はじめ！</button>
     <div class="row"><button class="btn gray wide" onclick="closeModal()">またこんど</button></div></div>`);
-  speak("本番テストだよ。20問で100点満点。制限時間は10分。がんばってね！");
+  speak(`${plain(cfg.title).replace(/^\S+ /,"")}だよ。${cfg.n}問で100点満点。制限時間は${cfg.sec/60}分。がんばってね！`);
 }
-function startExam(chId){
-  const ch = CHAPTERS.find(c=>c.id===chId);
-  const basic = shuffle([...chapterQs(ch)]).slice(0, EXAM_N-EXAM_CQ)
-    .map(q=>({q:q.q, a:q.a, e:q.e, kind:"一問一答", opts:shuffle([q.a, ...q.d.slice(0,3)])}));
-  const test = shuffle(CQ.filter(q=>q.ch===chId)).slice(0, EXAM_CQ)
-    .map(q=>({q:q.q, a:q.a, e:q.e, kind:q.k, opts:shuffle([q.a, ...q.d])}));
-  EX = {ch, items:[...basic, ...test], ans:Array(EXAM_N).fill(null), i:0, end:Date.now()+EXAM_SEC*1000, timer:null};
+function startExam(k){
+  const cfg = examCfg(examKey(k));
+  const items = cfg.build();
+  EX = {cfg, items, ans:Array(items.length).fill(null), i:0, end:Date.now()+cfg.sec*1000, timer:null};
   closeModal();
   show("exam");
   SFX.ratchet();
   EX.timer = setInterval(examTick, 250);
   renderExam();
 }
+const examLeft = () => Math.max(0, Math.ceil((EX.end - Date.now())/1000));
 function examTick(){
   if(!EX) return;
-  const left = Math.max(0, Math.ceil((EX.end - Date.now())/1000));
+  const left = examLeft();
   const t = document.getElementById("exTime");
   if(t){
     t.textContent = `⏱️ ${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;
-    t.classList.toggle("hurry", left <= 60);
+    t.classList.toggle("hurry", left <= 30);
   }
-  const bar = document.getElementById("exBar"); if(bar) bar.style.width = (left/EXAM_SEC*100)+"%";
-  if(left <= 0){ clearInterval(EX.timer); SFX.thud(); alert("時間になりました！ 答案を集めます"); gradeExam(); }
+  const bar = document.getElementById("exBar"); if(bar) bar.style.width = (left/EX.cfg.sec*100)+"%";
+  if(left <= 0){ clearInterval(EX.timer); SFX.thud(); alert("時間になりました！ 答案を集めます"); gradeExam(true); }
 }
 function renderExam(){
-  const {ch, items, ans, i} = EX, it = items[i];
+  const {cfg, items, ans, i} = EX, it = items[i], N = items.length;
   const done = ans.filter(a=>a!==null).length;
+  const color = it.ch ? CHAPTERS.find(c=>c.id===it.ch).color : cfg.color;
   document.getElementById("exam").innerHTML = `
     <div class="quiz-top"><button class="quit" onclick="quitExam()">✕</button>
-      <div class="g-title">📝 第${ch.id}回 本番テスト</div>
+      <div class="g-title">${cfg.title}</div>
       <div class="stat ex-time" id="exTime"></div></div>
     <div class="cq-time"><div id="exBar"></div></div>
-    <div class="ex-nums">${items.map((_,k)=>`<button class="${k===i?"now":""} ${ans[k]!==null?"done":""}" data-silent="1" onclick="EX.i=${k};renderExam()">${k+1}</button>`).join("")}</div>
+    <div class="ex-nums" style="grid-template-columns:repeat(${N>20?13:10},1fr)">${items.map((_,k)=>`<button class="${k===i?"now":""} ${ans[k]!==null?"done":""}" data-silent="1" onclick="EX.i=${k};renderExam()">${k+1}</button>`).join("")}</div>
     <div class="ex-paper">
-      <div class="ex-head"><span class="cq-kind" style="background:${ch.color}">${i<EXAM_N-EXAM_CQ?"一問一答":"テスト問題・"+it.kind}</span><span class="ex-pt">5点</span>
+      <div class="ex-head"><span class="cq-kind" style="background:${color}">${it.ch?`第${it.ch}回 ・ `:""}${it.kind}</span><span class="ex-pt">${cfg.pt}点</span>
         <button class="ex-say" data-silent="1" onclick="speak(spoken(EX.items[EX.i].q), true)">🔊</button></div>
       <div class="cq-q"><b>問${i+1}.</b> ${ruby(it.q)}</div>
       <div class="cq-choices">${it.opts.map((o,k)=>`<button class="choice cq-choice ex-choice ${ans[i]===o?"picked":""}" data-silent="1" onclick="pickExam(${k})"><span class="ex-mark">${"アイウエ"[k]}</span>${esc(o)}</button>`).join("")}</div>
     </div>
     <div class="row ex-nav">
       <button class="btn gray" ${i===0?"disabled":""} onclick="EX.i--;renderExam()">◀ まえ</button>
-      ${i<EXAM_N-1?`<button class="btn blue" onclick="EX.i++;renderExam()">つぎ ▶</button>`:""}
+      ${i<N-1?`<button class="btn blue" onclick="EX.i++;renderExam()">つぎ ▶</button>`:""}
     </div>
-    <div class="row"><button class="btn red wide ${done===EXAM_N?"shine":""}" onclick="submitExam()">✏️ 提出する（${done}/${EXAM_N}問 答えた）</button></div>`;
+    <div class="row"><button class="btn red wide ${done===N?"shine":""}" onclick="submitExam()">✏️ 提出する（${done}/${N}問 答えた）</button></div>`;
   examTick();
 }
 function pickExam(k){
@@ -2775,14 +2818,14 @@ function pickExam(k){
   EX.ans[EX.i] = it.opts[k];
   SFX.pop();
   // 答えたら自動でつぎの問題へ（最後の問題ならそのまま）
-  if(EX.i < EXAM_N-1){ renderExam(); setTimeout(()=>{ if(EX){ EX.i++; renderExam(); } }, 250); }
+  if(EX.i < EX.items.length-1){ renderExam(); setTimeout(()=>{ if(EX){ EX.i++; renderExam(); } }, 250); }
   else renderExam();
 }
 function submitExam(){
   const left = EX.ans.filter(a=>a===null).length;
   if(!confirm(left ? `まだ ${left}問 答えていないよ。提出する？` : "提出する？（もう答えは直せないよ）")) return;
   clearInterval(EX.timer);
-  gradeExam();
+  gradeExam(false);
 }
 function quitExam(){
   if(!confirm("テストをやめる？（点数はつかないよ）")) return;
@@ -2790,37 +2833,42 @@ function quitExam(){
   EX = null;
   goHome();
 }
-function gradeExam(){
+function gradeExam(timeUp){
   if(!EX) return;
-  const {ch, items, ans} = EX;
+  const {cfg, items, ans} = EX;
+  const secLeft = timeUp ? 0 : examLeft();
   EX = null;
   const res = items.map((it,k)=>({...it, mine:ans[k], ok:ans[k]===it.a}));
-  const score = res.filter(r=>r.ok).length * (100/EXAM_N);
-  const rec = examRec(ch.id);
+  const right = res.filter(r=>r.ok).length;
+  const score = right * cfg.pt;
+  const rec = examRec(cfg.key);
   const isBest = rec.best===null || score > rec.best;
   const first100 = score===100 && !rec.got100;
-  const gem = Math.floor(score/2);
-  save.exam[ch.id] = {best: isBest?score:rec.best, tries:rec.tries+1, got100: rec.got100 || score===100};
-  save.xp += gem;
+  const base = score * 3;
+  const bonus = Math.floor(secLeft * score / 100);
+  save.exam[cfg.key] = {best: isBest?score:rec.best, tries:rec.tries+1, got100: rec.got100 || score===100};
+  save.xp += base + bonus;
   if(first100) save.tickets++;
   persist();
   const stamp = score===100 ? ["💮","たいへん よくできました","s100"] : score>=80 ? ["⭐","よくできました","s80"] : score>=60 ? ["👍","もう少し！","s60"] : ["💪","つぎは がんばろう","s0"];
   document.getElementById("exam").innerHTML = `
-    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">📝 第${ch.id}回 本番テスト けっか</div><div class="stat"></div></div>
+    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">${cfg.title} けっか</div><div class="stat"></div></div>
     <div class="ex-result">
       <div class="ex-score"><span id="exScore">0</span><small>点</small></div>
       <div class="ex-stamp ${stamp[2]}">${stamp[0]} ${stamp[1]}</div>
       ${isBest&&rec.best!==null?`<div class="mastered-badge">🏆 ベスト記録こうしん！（前は${rec.best}点）</div>`:""}
-      <div class="ex-reward">💎 +${gem}${first100?"　🎟️ チケット +1（はじめての100点！）":""}</div>
+      <div class="ex-reward">💎 +${base+bonus}</div>
+      <div class="ex-break">基本（${score}点×3）💎${base} ＋ 時間ボーナス（のこり${Math.floor(secLeft/60)}分${String(secLeft%60).padStart(2,"0")}秒）💎${bonus}${timeUp?"<br><small>時間切れなので、時間ボーナスはなし</small>":""}</div>
+      ${first100?`<div class="ex-reward">🎟️ チケット +1（はじめての100点！）</div>`:""}
     </div>
-    <div class="rar-label">答え合わせ（${res.filter(r=>r.ok).length} / ${EXAM_N}問 正解）</div>
+    <div class="rar-label">答え合わせ（${right} / ${items.length}問 正解）</div>
     <div class="ex-review">${res.map((r,k)=>`<div class="ex-row ${r.ok?"ok":"ng"}">
       <div><b>${r.ok?"⭕":"❌"} 問${k+1}.</b> ${ruby(r.q)}</div>
       ${r.ok?`<div class="ex-a">こたえ：${esc(r.a)}</div>`:`<div class="ex-a">あなた：${r.mine===null?"（答えなし）":esc(r.mine)}<br>正しいこたえ：<b>${esc(r.a)}</b></div><div class="ex-e">${esc(plain(r.e||""))}</div>`}
     </div>`).join("")}</div>
     <div class="row" style="margin-top:16px">
       <button class="btn gray" onclick="goHome()">ホームへもどる</button>
-      <button class="btn red" onclick="tapExam(${ch.id})">📝 もう一回うける</button>
+      <button class="btn red" onclick="tapExam('${cfg.key}')">📝 もう一回うける</button>
     </div>`;
   window.scrollTo(0,0);
   // 点数をカウントアップ
