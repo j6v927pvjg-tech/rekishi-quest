@@ -177,7 +177,7 @@ ruby rt{font-size:.5em;font-weight:700;color:#888}
 .mic.listening{background:var(--red);box-shadow:0 8px 0 var(--red-d);animation:pulse .9s infinite}
 .heard{text-align:center;font-size:24px;min-height:40px;margin:6px 0}
 .small-note{text-align:center;color:var(--sub);font-size:15px}
-.canvas-wrap{background:#fff;border-radius:20px;border:3px solid #dfe3cf;overflow:hidden;touch-action:none}
+.canvas-wrap{background:#fff;border-radius:20px;border:3px solid #dfe3cf;overflow:hidden;touch-action:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 
 /* 正解・不正解のおしらせ */
@@ -666,8 +666,6 @@ const CHAPTERS = [
 /* 答え方の種類と、もらえる★の数 */
 const MODES = {
   choice:{name:"4択",     icon:"🔢", stars:1, desc:"4つから選ぶ"},
-  type:  {name:"キーボード", icon:"⌨️", stars:2, desc:"文字を打ちこむ"},
-  voice: {name:"音声",     icon:"🎤", stars:2, desc:"声で答える"},
   hand:  {name:"手書き",   icon:"✍️", stars:3, desc:"指で書いて答える"},
 };
 
@@ -1267,7 +1265,6 @@ function tapReview(){
 }
 
 /* 答え方を選ぶポップアップ */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let pendingStart = null;
 function openModeSelect(title, subt, onPick){
   pendingStart = onPick;
@@ -1279,10 +1276,9 @@ function openModeSelect(title, subt, onPick){
     </div>
     <div class="modes">`;
   for(const [k,m] of Object.entries(MODES)){
-    const unsupported = k==="voice" && !SR;
-    html += `<button class="mode" ${unsupported?"disabled":""} onclick="pickMode('${k}')">
+    html += `<button class="mode" onclick="pickMode('${k}')">
       <span class="mi">${m.icon}</span>${m.name}<br><span class="ms">${"★".repeat(m.stars)}</span>
-      <span class="md">${unsupported?"このブラウザでは使えないよ":m.desc}</span></button>`;
+      <span class="md">${m.desc}</span></button>`;
   }
   html += `</div><div class="row"><button class="btn gray wide" onclick="closeModal()">やめる</button></div>`;
   showModal(html);
@@ -1391,7 +1387,6 @@ function heartsHTML(){ return [0,1,2].map(i=>`<span class="${i<Q.hearts?"":"lost
 
 function nextQuestion(){
   hideFeedback();
-  stopListening();
   Q.current = Q.queue.shift();
   Q.locked = false;
   const {q, retry} = Q.current;
@@ -1416,8 +1411,6 @@ function nextQuestion(){
     <div id="ans"></div>`;
   const ans = document.getElementById("ans");
   if(mode==="choice") renderChoices(ans, q);
-  else if(mode==="type") renderType(ans, q);
-  else if(mode==="voice") renderVoice(ans, q);
   else renderHand(ans, q);
   if(save.settings.autoRead) speak(spoken(q.q));
 }
@@ -1457,77 +1450,6 @@ function showHint(){
 }
 function giveUp(){ if(!Q.locked) judge(false, ""); }
 
-/* --- キーボード --- */
-function renderType(ans, q){
-  ans.innerHTML = `${hintArea(q)}
-    <input id="typed" class="ans-input" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ここに答えを入れてね">
-    <div class="row"><button class="btn wide" onclick="submitTyped()">こたえる</button></div>
-    ${helperRow()}`;
-  const inp = document.getElementById("typed");
-  inp.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); submitTyped(); } });
-  setTimeout(()=>inp.focus(), 50);
-}
-function submitTyped(){
-  if(Q.locked) return;
-  const v = document.getElementById("typed").value.trim();
-  if(!v){ teacherMood(null,"shake"); return; }
-  judge(isCorrect(Q.current.q, v), v);
-}
-
-/* --- 音声 --- */
-let recog = null;
-function renderVoice(ans, q){
-  ans.innerHTML = `${hintArea(q)}
-    <button class="mic" id="mic" data-silent="1" onclick="toggleListen()">🎤</button>
-    <div class="small-note" id="micNote">マイクをおして、答えを言ってね</div>
-    <div class="heard" id="heard"></div>
-    <div class="row" id="voiceConfirm" style="display:none">
-      <button class="btn blue" onclick="toggleListen()">🎤 もう一回話す</button>
-      <button class="btn" onclick="submitHeard()">これでこたえる</button>
-    </div>
-    ${helperRow()}`;
-}
-let heardList = [];
-function toggleListen(){
-  if(Q.locked) return;
-  if(recog){ stopListening(); return; }
-  SFX.pop();
-  if(window.speechSynthesis) speechSynthesis.cancel();
-  heardList = [];
-  document.getElementById("voiceConfirm").style.display = "none";
-  document.getElementById("heard").textContent = "";
-  try{
-    recog = new SR();
-    recog.lang = "ja-JP"; recog.interimResults = true; recog.maxAlternatives = 5; recog.continuous = false;
-  }catch(e){ document.getElementById("micNote").textContent = "音声入力が使えないみたい…"; return; }
-  document.getElementById("mic").classList.add("listening");
-  document.getElementById("micNote").textContent = "きいてるよ…";
-  recog.onresult = e=>{
-    const res = e.results[e.results.length-1];
-    document.getElementById("heard").textContent = res[0].transcript;
-    if(res.isFinal) heardList = Array.from(res).map(r=>r.transcript);
-  };
-  recog.onerror = e=>{
-    const msg = (e.error==="not-allowed"||e.error==="service-not-allowed")
-      ? "マイクが使えないよ。ブラウザでマイクを許可してね"
-      : e.error==="no-speech" ? "聞こえなかったよ。もう一回おしてね" : "うまく聞きとれなかったよ";
-    const n = document.getElementById("micNote"); if(n) n.textContent = msg;
-  };
-  recog.onend = ()=>{
-    recog = null;
-    const mic = document.getElementById("mic"); if(mic) mic.classList.remove("listening");
-    if(!heardList.length || Q.locked) return;
-    const hit = heardList.find(t=>isCorrect(Q.current.q, t));
-    if(hit){ judge(true, hit); return; }
-    document.getElementById("micNote").textContent = "こう聞こえたよ。これでいい？";
-    document.getElementById("heard").textContent = `「${heardList[0]}」`;
-    document.getElementById("voiceConfirm").style.display = "flex";
-  };
-  recog.start();
-}
-function stopListening(){ if(recog){ try{ recog.stop(); }catch(e){} } }
-function submitHeard(){ if(!Q.locked && heardList.length) judge(false, heardList[0]); }
-
 /* --- 手書き --- */
 let pad = null;
 function renderHand(ans, q){
@@ -1552,10 +1474,33 @@ function setupPad(cv, boxes){
   const ctx = cv.getContext("2d"); ctx.scale(dpr,dpr);
   pad = {cv, ctx, w:rect.width, h:rect.height, boxes:Math.max(1,Math.min(boxes,10)), strokes:[], cur:null, hint:""};
   const pos = e=>{ const r = cv.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; };
-  cv.onpointerdown = e=>{ if(Q.locked) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); const [x,y]=pos(e); pad.cur=[[x],[y],[Date.now()]]; drawPad(); };
-  cv.onpointermove = e=>{ if(!pad.cur) return; e.preventDefault(); const [x,y]=pos(e); pad.cur[0].push(x); pad.cur[1].push(y); pad.cur[2].push(Date.now()); drawPad(); };
+  // 線を1画はじめる（前の線が終わっていなければ、先に確定させる＝捨てない）
+  const start = e=>{ if(Q.locked) return; end(); const [x,y]=pos(e); pad.cur=[[x],[y],[Date.now()]]; drawPad(); };
+  const move  = e=>{ if(!pad.cur) return; const [x,y]=pos(e); pad.cur[0].push(x); pad.cur[1].push(y); pad.cur[2].push(Date.now()); drawPad(); };
   const end = ()=>{ if(pad.cur){ if(pad.cur[0].length===1){ pad.cur[0].push(pad.cur[0][0]+1); pad.cur[1].push(pad.cur[1][0]+1); pad.cur[2].push(Date.now()); } pad.strokes.push(pad.cur); pad.cur=null; drawPad(); } };
-  cv.onpointerup = end; cv.onpointercancel = end;
+  // iPad など指で書くとき：タッチイベントで受け取る。
+  // はじめに preventDefault して、ブラウザの「ダブルタップ」判定などを止めるので、素早く続けて書いても1画ずつ届く
+  let touchId = null;
+  const findT = list => [...list].find(t=>t.identifier===touchId);
+  cv.addEventListener("touchstart", e=>{
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    touchId = t.identifier; start(t);
+  }, {passive:false});
+  cv.addEventListener("touchmove", e=>{
+    e.preventDefault();
+    const t = findT(e.changedTouches); if(t) move(t);
+  }, {passive:false});
+  const touchEnd = e=>{
+    e.preventDefault();
+    if(findT(e.changedTouches)){ touchId = null; end(); }
+  };
+  cv.addEventListener("touchend", touchEnd, {passive:false});
+  cv.addEventListener("touchcancel", touchEnd, {passive:false});
+  // パソコンのマウス・ペン（指のタッチは上で受け取るので、ここでは無視）
+  cv.onpointerdown = e=>{ if(e.pointerType==="touch") return; e.preventDefault(); cv.setPointerCapture(e.pointerId); start(e); };
+  cv.onpointermove = e=>{ if(e.pointerType==="touch") return; e.preventDefault(); move(e); };
+  cv.onpointerup = cv.onpointercancel = e=>{ if(e.pointerType==="touch") return; end(); };
   drawPad();
 }
 function drawPad(){
@@ -1630,7 +1575,6 @@ const meterHTML = m => `<div class="m-meter">おぼえた度 <b>${"●".repeat(m
 function judge(ok, userText="", opt={}){
   if(Q.locked) return;
   Q.locked = true;
-  stopListening();
   const {q, retry} = Q.current;
   // おぼえた度を記録（「字はあってた！」で元にもどせるように、前の値もとっておく）
   Q.prev = {m: masteryOf(q), wrong: !!save.wrong[q.id]};
@@ -1717,7 +1661,7 @@ function xpPop(text){
 }
 function quitStage(){
   if(!confirm("とちゅうでやめる？（おぼえた度は記録されるけど、ゲージや★はもらえないよ）")) return;
-  stopListening(); hideFeedback(); if(window.speechSynthesis) speechSynthesis.cancel();
+  hideFeedback(); if(window.speechSynthesis) speechSynthesis.cancel();
   goHome();
 }
 
@@ -1762,7 +1706,7 @@ function showClear(){
     <h1>${Q.kind==="review"?"📒 にがて復習":Q.boss?"👑 まとめテスト":"ステージ"}クリア！</h1>
     <div style="font-size:18px">${esc(Q.title)}（${MODES[Q.mode].icon} ${MODES[Q.mode].name}）</div>
     ${Q.kind==="stage"?`<div class="big-stars">${[0,1,2].map(i=>`<span data-i="${i}">⭐</span>`).join("")}</div>
-      ${got<3?`<div class="small-note">${got<2?"キーボードか音声なら★2つ、":""}手書きなら★3つもらえるよ！</div>`:""}`:""}
+      ${got<3?`<div class="small-note">手書きなら★3つもらえるよ！</div>`:""}`:""}
     <div class="res-cards">
       <div class="res-card">💎 けいけんち<b>+${Q.xp}</b></div>
       <div class="res-card">🎯 1回で正解<b>${acc}%</b></div>
