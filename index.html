@@ -356,6 +356,49 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 .m-end{text-align:center;padding:20px 0;animation:panelIn .35s ease}
 .m-end-title{font-size:40px;margin-bottom:16px;color:#c98b00}
 
+/* ===== みるく島とチャレンジ ===== */
+.isl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.isl-title{font-size:22px;color:#c98b00}
+.isl-map{position:relative;width:100%;aspect-ratio:4/3;border-radius:24px;overflow:hidden;box-shadow:0 6px 0 rgba(0,0,0,.1)}
+.isl-bg{position:absolute;inset:0;width:100%;height:100%}
+.ibld{position:absolute;width:17%;transform:translate(-50%,-70%);background:none;padding:0;color:var(--ink)}
+.ibld svg{display:block;width:100%}
+.ibld.lot{opacity:.85}
+.ibld.lv2 svg{filter:drop-shadow(0 0 6px rgba(255,200,60,.9))}
+.ib-name{display:block;font-size:clamp(9px,1.5vw,13px);background:rgba(255,255,255,.85);border-radius:8px;padding:1px 4px;margin-top:-4px;white-space:nowrap}
+.ibld:active{transform:translate(-50%,-70%) scale(.94)}
+.ibld.building{animation:mshake .25s ease 6}
+.ibld.building::after{content:"🔨";position:absolute;right:-6px;top:10%;font-size:28px;animation:hammer .35s ease-in-out infinite alternate}
+@keyframes hammer{from{transform:rotate(-30deg)}to{transform:rotate(30deg)}}
+.ibld.done{animation:starpop .6s ease}
+.ichar{position:absolute;width:8.5%;transform:translate(-50%,-80%);background:none;padding:0;animation:walk var(--d,3s) ease-in-out infinite alternate;z-index:2}
+.ichar svg{display:block;width:100%;height:auto;overflow:visible}
+@keyframes walk{0%{margin-left:-14px}50%{margin-top:-4px}100%{margin-left:14px}}
+.ichar.hop{animation:starpop .5s ease}
+.ichar.visitor{width:10%;animation:bob .8s ease-in-out infinite alternate;z-index:3}
+.v-mark{position:absolute;left:50%;top:-14px;transform:translateX(-50%);background:#ff5a5a;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 0 #c43c3c;animation:pulse 1s infinite;z-index:1}
+.ibubble{position:absolute;max-width:40%;background:#fff;border:3px solid #2a2a2a;border-radius:16px;padding:6px 10px;font-size:13px;line-height:1.5;z-index:5;display:none}
+.ibubble.show{display:block;animation:fadein .2s}
+.bld-big{width:180px;margin:0 auto}
+.who-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 12px}
+.who-cell{width:70px;text-align:center}
+.who-cell .stk{border-width:3px}
+.cq-dots{flex:1;display:flex;justify-content:center;gap:12px}
+.cq-dots span{width:34px;height:34px;border-radius:50%;background:#e1e5cf;display:flex;align-items:center;justify-content:center;font-size:16px}
+.cq-dots span.now{background:#ffc83d;transform:scale(1.15)}
+.cq-dots span.ok{background:#d9f7c8}
+.cq-face{width:110px;flex-shrink:0}
+.cq-kind{display:inline-block;color:#fff;border-radius:10px;padding:1px 10px;font-size:13px;margin:4px 0}
+.cq-q{font-size:20px;line-height:1.6}
+.cq-time{height:14px;border-radius:7px;background:#e1e5cf;overflow:hidden;margin:4px 0 10px}
+.cq-time div{height:100%;width:100%;background:linear-gradient(90deg,#ff5a5a,#ffc83d);transition:width .1s linear}
+.cq-choices{display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px}
+.cq-choice{text-align:left;font-size:18px;line-height:1.5;padding:14px 18px}
+.cq-choice.gone{opacity:.25}
+.cq-fb{margin-top:14px;border-radius:18px;padding:14px;font-size:17px;line-height:1.6}
+.cq-fb.good{background:#e6f9d8}.cq-fb.bad{background:#ffe6e6}
+.cq-result{position:relative;text-align:center;padding-top:20px;overflow:hidden;min-height:520px}
+
 @media (max-width:560px){ .hub{grid-template-columns:1fr} .book-grid{grid-template-columns:repeat(3,1fr)} }
 @media (max-width:520px){
   .q-text{font-size:19px}.choice{font-size:18px}.teacher{width:100px}.teacher.sm{width:76px}
@@ -386,6 +429,9 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 <!-- 本棚とマンガ -->
 <div id="shelf" class="screen"></div>
 <div id="manga" class="screen"></div>
+<!-- みるく島とチャレンジ -->
+<div id="island" class="screen"></div>
+<div id="challenge" class="screen"></div>
 
 <div id="modal" class="modal"><div class="sheet" id="sheet"></div></div>
 <div id="feedback" class="feedback"><div class="inner" id="fbInner"></div></div>
@@ -615,12 +661,13 @@ function defaultSave(){
           gauge:0,      // ガチャゲージ（3でガチャ1回）
           tickets:0,    // まわせるガチャの回数
           stickers:{},  // 持っているシールと枚数
-          manga:{gauge:0, open:1, seen:{}}}; // マンガゲージ（5で1話）・読める話の数（1話目は最初から）・読んだ話
+          manga:{gauge:0, open:1, seen:{}},
+          island:{b:{}, visitors:[], cq:{}}};  // みるく島：建物のレベル・チャレンジャー・出た問題の回数 // マンガゲージ（5で1話）・読める話の数（1話目は最初から）・読んだ話
 }
 function loadSave(){
   try{
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if(s){ const d = defaultSave(); return {...d, ...s, settings:{...d.settings, ...(s.settings||{})}, manga:{...d.manga, ...(s.manga||{})}}; }
+    if(s){ const d = defaultSave(); return {...d, ...s, settings:{...d.settings, ...(s.settings||{})}, manga:{...d.manga, ...(s.manga||{})}, island:{...d.island, ...(s.island||{})}}; }
   }catch(e){}
   return defaultSave();
 }
@@ -1072,6 +1119,11 @@ function renderHome(){
       <div class="hub-sub">${weak.length?`まちがえたことがあって、まだおぼえていない問題が <b>${weak.length}問</b>`:"にがてな問題は、いまはないよ！"}</div>
       <button class="btn red" onclick="tapReview()" ${weak.length?"":"disabled"}>📒 ふくしゅうする</button>
       <div class="hub-sub">おぼえた問題：<b>${mastered}</b> / ${ALL_QS.length}（3回連続で正解すると「おぼえた！」）</div>
+    </div>
+    <div class="hub-card span2">
+      <div class="hub-title">🏝️ みるく島 <span style="font-size:15px;color:#c98b00">「${islandTitle()}」</span> ${isl().visitors.filter(id=>!save.stickers[id]).length?`<span class="stk-count" style="position:static">！チャレンジャー ${isl().visitors.filter(id=>!save.stickers[id]).length}人</span>`:""}</div>
+      <div class="hub-sub">💎で歴史の建物を建てて、島を大きくしよう。まだ仲間じゃないキャラに、テストに出る問題で勝負をいどむと、シールがもらえるよ！（建物 ${BUILDINGS.filter(b=>bLv(b.id)).length}/${BUILDINGS.length}・いま 💎${save.xp}）</div>
+      <button class="btn gold ${isl().visitors.length||save.xp>=150?"shine":""}" onclick="openIsland()">🏝️ 島へ行く</button>
     </div>
     <div class="hub-card span2">
       <div class="hub-title">📚 みるく先生のマンガ ${unreadCount()?`<span class="stk-count" style="position:static">NEW ${unreadCount()}</span>`:""}</div>
@@ -2140,6 +2192,388 @@ function renderMangaFrame(){
 function mangaTap(e){
   const r = e.currentTarget.getBoundingClientRect();
   mangaGo(e.clientX - r.left < r.width/2 ? -1 : 1);
+}
+
+/* =========================================================
+   チャレンジ問題（テストに出る形の問題）
+   ch: 第何回 / k: 問題の形 / q: 問題 / a: 正解 / d: まちがいの選択肢 / e: 説明
+   ========================================================= */
+const CQ = [
+ // ---- 第29回 天下統一への歩み ----
+ {ch:29,k:"変化",q:"鉄砲が伝わったことで、戦いの方法はどのように変わった？",a:"足軽の鉄砲隊による集団戦法が中心になった",d:["騎馬武者どうしの一騎打ちが中心になった","城を築かなくなった","戦いがまったくなくなった"],e:"鉄砲の使用で戦いの勝ち負けが早く決まるようになり、全国統一が急に進んだといわれているよ。"},
+ {ch:29,k:"正しい文",q:"フランシスコ・ザビエルについて、正しい文はどれ？",a:"イエズス会の宣教師で、1549年に鹿児島に来てキリスト教を伝えた",d:["オランダの商人で、長崎の出島で貿易をした","ポルトガル人で、1543年に種子島に鉄砲を伝えた","ローマ法王のもとへ送られた4人の少年使節の1人だった"],e:"ザビエルはイエズス会の宣教師。1549年に鹿児島に来て、キリスト教を伝えたよ。"},
+ {ch:29,k:"人物",q:"4人の少年使節（天正遣欧使節）をローマ法王のもとへ送ったのは、どんな大名？",a:"キリシタン大名",d:["外様大名","譜代大名","守護大名"],e:"キリスト教を信じる大名をキリシタン大名というよ。九州の大友・大村・有馬氏が少年使節を送ったんだ。"},
+ {ch:29,k:"貿易",q:"南蛮貿易で、日本が主に輸出したものはどれ？",a:"銀",d:["生糸","鉄砲","火薬"],e:"日本からはおもに銀を輸出し、鉄砲・火薬・生糸などを輸入したよ。"},
+ {ch:29,k:"貿易",q:"南蛮貿易で、日本に輸入されたものの組み合わせはどれ？",a:"鉄砲・火薬・生糸",d:["銀・刀・漆器","米・塩・茶","木綿・菜種・干鰯"],e:"ポルトガルやスペインの商人は、鉄砲・火薬のほか、中国産の生糸などを持ってきたよ。"},
+ {ch:29,k:"ねらい",q:"織田信長が楽市・楽座を行ったねらいはどれ？",a:"だれでも自由に商工業を営めるようにして、城下町を栄えさせるため",d:["百姓から武器を取り上げるため","キリスト教を禁止するため","大名を江戸に住まわせるため"],e:"市の税をなくし、座の特権をなくして、だれでも自由に商売できるようにしたよ。"},
+ {ch:29,k:"まちがい",q:"織田信長が行ったことではないものはどれ？",a:"太閤検地を行った",d:["長篠の戦いで鉄砲を有効に使った","室町幕府をほろぼした","安土城を築いた"],e:"太閤検地を行ったのは豊臣秀吉だよ。"},
+ {ch:29,k:"順番",q:"次のできごとを、古い順にならべたものはどれ？",a:"桶狭間の戦い → 長篠の戦い → 本能寺の変",d:["長篠の戦い → 桶狭間の戦い → 本能寺の変","本能寺の変 → 桶狭間の戦い → 長篠の戦い","桶狭間の戦い → 本能寺の変 → 長篠の戦い"],e:"桶狭間の戦い（1560年）→ 長篠の戦い（1575年）→ 本能寺の変（1582年）の順だよ。"},
+ {ch:29,k:"ねらい",q:"豊臣秀吉が刀狩を行ったねらいはどれ？",a:"百姓の一揆を防ぎ、田畑の耕作に打ちこませるため",d:["刀を外国へ売って、もうけるため","武士の数をふやすため","寺や神社に刀を納めるため"],e:"刀狩は一揆を防ぎ、百姓を農業に打ちこませるために行われたよ。"},
+ {ch:29,k:"しくみ",q:"太閤検地と刀狩によって、武士と百姓の身分の区別がはっきりしたことを何という？",a:"兵農分離",d:["鎖国","参勤交代","楽市・楽座"],e:"検地と刀狩によって、武士と百姓の区別がはっきりした。これを兵農分離というよ。"},
+ {ch:29,k:"正しい文",q:"太閤検地について、正しい文はどれ？",a:"ものさしやますを統一して、田畑の広さやよしあしを調べた",d:["年貢を銀で納めさせた","大名が城を修理することを禁止した","百姓に名字を名のらせた"],e:"全国の田畑の広さや土地のよしあしを調べ、とれ高を石高で表したよ。"},
+ {ch:29,k:"年表",q:"1590年、豊臣秀吉は（　）氏をほろぼして、全国統一を成しとげた。（　）にあてはまるのは？",a:"北条",d:["武田","今川","毛利"],e:"小田原の北条氏をほろぼして、秀吉は全国を統一したよ。"},
+ {ch:29,k:"できごと",q:"豊臣秀吉が明を征服しようとして、朝鮮に大軍を送った戦いはどれ？",a:"文禄の役・慶長の役",d:["応仁の乱","島原・天草一揆","大阪の陣"],e:"2度にわたって朝鮮に兵を送ったけれど、李舜臣のひきいる水軍などに苦しめられたよ。"},
+ {ch:29,k:"文化",q:"桃山文化の特色として、正しいものはどれ？",a:"大名や大商人の力を反映した、豪華でたくましい文化",d:["貴族を中心とした、日本風の優美な文化","禅宗の影響を受けた、質素で落ち着いた文化","外国の文化をまったく受け入れない文化"],e:"天守閣をもつ城や、金ぱくを使ったふすま絵など、豪華でたくましい文化だよ。"},
+ {ch:29,k:"人物",q:"千利休について、正しい文はどれ？",a:"堺の商人で、茶の湯を茶道として大成した",d:["「唐獅子図屏風」をえがいた","かぶき踊りを始めた","朝鮮から来た陶工で、有田焼を始めた"],e:"千利休は堺の商人。茶の湯を茶道として大成したよ。「唐獅子図屏風」は狩野永徳の作品だね。"},
+ {ch:29,k:"文化",q:"姫路城や大阪城に見られる、高くそびえる建物を何という？",a:"天守閣",d:["五重塔","寝殿造","蔵屋敷"],e:"天守閣は、大名の力を示すために高くそびえるように建てられたよ。"},
+
+ // ---- 第30回 徳川家康と江戸幕府 ----
+ {ch:30,k:"年表",q:"1600年、徳川家康が石田三成らに勝った戦いはどれ？",a:"関ヶ原の戦い",d:["長篠の戦い","桶狭間の戦い","大阪の陣"],e:"「天下分け目の戦い」とよばれる関ヶ原の戦いで、家康が勝ったよ。"},
+ {ch:30,k:"年表",q:"徳川家康が征夷大将軍に任命されて、江戸幕府を開いたのは何年？",a:"1603年",d:["1600年","1615年","1639年"],e:"1603年に家康は征夷大将軍になり、江戸幕府を開いたよ。"},
+ {ch:30,k:"順番",q:"次のできごとを、古い順にならべたものはどれ？",a:"関ヶ原の戦い → 江戸幕府が開かれる → 大阪の陣",d:["江戸幕府が開かれる → 関ヶ原の戦い → 大阪の陣","大阪の陣 → 関ヶ原の戦い → 江戸幕府が開かれる","関ヶ原の戦い → 大阪の陣 → 江戸幕府が開かれる"],e:"関ヶ原の戦い（1600年）→ 江戸幕府（1603年）→ 大阪の陣（1614〜15年）の順だよ。"},
+ {ch:30,k:"できごと",q:"大阪の陣でほろぼされたのはだれ？",a:"豊臣氏（豊臣秀頼）",d:["武田氏","北条氏","明智光秀"],e:"家康は大阪の陣で豊臣氏をほろぼし、全国支配を固めたよ。"},
+ {ch:30,k:"しくみ",q:"将軍（幕府）と大名（藩）が、全国の土地と人々を支配したしくみを何という？",a:"幕藩体制",d:["兵農分離","寺請制度","問屋制家内工業"],e:"幕府と藩が全国を支配するしくみを、幕藩体制というよ。"},
+ {ch:30,k:"役職",q:"老中の仕事として、正しいものはどれ？",a:"将軍のもとで、ふだんの政治を行う",d:["朝廷や西国の大名を見はる","幕府のお金（財政）を担当する","非常のときだけ置かれる最高の役職"],e:"老中はふだんの政治を行う役職。朝廷を見はるのは京都所司代、財政は勘定奉行、非常時の最高職は大老だよ。"},
+ {ch:30,k:"役職",q:"朝廷や西国の大名を見はるために置かれた役職はどれ？",a:"京都所司代",d:["老中","勘定奉行","大老"],e:"京都所司代は、京都で朝廷や西国の大名を見はったよ。"},
+ {ch:30,k:"理由",q:"外様大名が、江戸から遠いところに配置された理由はどれ？",a:"関ヶ原の戦いのあとに徳川氏に従った大名で、警戒されたから",d:["徳川家の親せきで、信用されていたから","関ヶ原の戦いの前から徳川氏の家来だったから","外国との貿易をまかされていたから"],e:"外様大名は関ヶ原の戦いのあとに従った大名。反抗されないよう、江戸から遠い九州や東北などに置かれたよ。"},
+ {ch:30,k:"ことば",q:"関ヶ原の戦いの前から徳川氏に従っていた大名を何という？",a:"譜代大名",d:["親藩","外様大名","旗本"],e:"譜代大名は、江戸の近くや重要な場所に置かれたよ。親藩は徳川家の親せきの大名だね。"},
+ {ch:30,k:"きまり",q:"武家諸法度の内容として、正しいものはどれ？",a:"城を修理するときは、幕府に届け出ること",d:["百姓は、田畑を売り買いしてはならない","日本人は、外国へ行ってはならない","天皇は、学問にはげむこと"],e:"武家諸法度は大名を取りしまるきまり。城の修理や大名どうしの結婚には幕府の許可が必要だったよ。"},
+ {ch:30,k:"人物",q:"参勤交代を、武家諸法度の中で制度として定めた将軍はだれ？",a:"徳川家光",d:["徳川家康","徳川秀忠","豊臣秀吉"],e:"3代将軍の徳川家光が、参勤交代を制度にしたよ。"},
+ {ch:30,k:"結果",q:"参勤交代によって、大名はどうなった？",a:"多くの費用がかかり、経済力が弱まった",d:["お金持ちになり、力が強くなった","江戸に住まなくてよくなった","外国と自由に貿易できるようになった"],e:"大名行列や江戸でのくらしに大金がかかり、大名の力は弱まったよ。"},
+ {ch:30,k:"きまり",q:"幕府が、朝廷や公家を取りしまるために定めたきまりはどれ？",a:"禁中並公家諸法度",d:["武家諸法度","御触書","バテレン追放令"],e:"禁中並公家諸法度で、天皇や公家の行動もきびしく制限したよ。"},
+ {ch:30,k:"身分",q:"武士にだけ認められていた特権「名字帯刀」とは、どんなこと？",a:"名字を名のり、刀を差すこと",d:["自由に商売をすること","年貢を納めなくてよいこと","外国へ行けること"],e:"武士は名字を名のり刀を差す「名字帯刀」が認められていたよ。"},
+ {ch:30,k:"ちがい",q:"本百姓と水呑百姓のちがいとして、正しいものはどれ？",a:"本百姓は田畑を持って年貢を納め、水呑百姓は田畑を持たない",d:["本百姓は田畑を持たず、水呑百姓は田畑を持つ","本百姓は町に住み、水呑百姓は村に住む","本百姓は武士で、水呑百姓は町人"],e:"田畑を持ち年貢を納めるのが本百姓、田畑を持たない貧しい百姓が水呑百姓だよ。"},
+ {ch:30,k:"しくみ",q:"五人組のしくみとして、正しいものはどれ？",a:"年貢を納めることや犯罪に、連帯で責任を負わせた",d:["5人の大名が交代で江戸に住んだ","5人の老中が順番に政治を行った","5つの街道を5人で守った"],e:"百姓を5けん1組にして、年貢や犯罪に共同で責任を負わせたよ。"},
+ {ch:30,k:"ことば",q:"「四公六民」の意味として、正しいものはどれ？",a:"収穫の4割を年貢として納め、6割が百姓の手元に残る",d:["収穫の6割を年貢として納め、4割が手元に残る","4人の役人が6つの村を治める","4年働いて6年休む"],e:"四公六民は収穫の4割、五公五民は5割を年貢として納めることだよ。"},
+ {ch:30,k:"きまり",q:"幕府が百姓に出した「御触書」の内容として、正しいものはどれ？",a:"酒や茶を買って飲んではならない",d:["城を修理するときは届け出ること","大名は1年おきに江戸に住むこと","外国船を見つけたら追いはらうこと"],e:"御触書では、百姓の生活のこまかいところまで決めていたよ。"},
+
+ // ---- 第31回 鎖国、産業と都市の発達 ----
+ {ch:31,k:"人物",q:"オランダ船で日本に流れ着き、のちに徳川家康の外交の相談役になったイギリス人はだれ？",a:"ウィリアム・アダムズ",d:["ヤン・ヨーステン","フランシスコ・ザビエル","山田長政"],e:"ウィリアム・アダムズはイギリス人。ヤン・ヨーステンはオランダ人だよ。"},
+ {ch:31,k:"しくみ",q:"朱印船貿易について、正しい文はどれ？",a:"幕府が出した朱印状を持つ船が、東南アジアと貿易した",d:["オランダの船だけが、出島で貿易した","大名が自由に、ヨーロッパへ船を送った","朝鮮通信使の船が、日本の品物を運んだ"],e:"幕府の許可状（朱印状）を持った船が東南アジアへ行き、各地に日本町ができたよ。"},
+ {ch:31,k:"人物",q:"シャム（いまのタイ）の日本町で活やくした人物はだれ？",a:"山田長政",d:["天草四郎","李舜臣","シャクシャイン"],e:"山田長政はシャムの日本町で活やくし、王室にも重く用いられたよ。"},
+ {ch:31,k:"理由",q:"幕府が禁教令を出して、キリスト教を禁止した理由として正しいものはどれ？",a:"キリスト教徒の団結が、幕府の支配のさまたげになると考えたから",d:["キリスト教徒と仏教徒が対立して、戦争がおきたから","ポルトガルとの貿易で、大もうけしたかったから","オランダがキリスト教を広めようとしたから"],e:"神への信仰を大切にするキリスト教徒の団結が、封建社会の支配のさまたげになると考えたんだ。"},
+ {ch:31,k:"年表",q:"1637年、重い年貢とキリスト教徒への弾圧に反対しておきた一揆はどれ？",a:"島原・天草一揆",d:["一向一揆","山城の国一揆","シャクシャインの戦い"],e:"天草四郎を大将に、島原・天草地方の人々が立ち上がったよ。"},
+ {ch:31,k:"しくみ",q:"キリスト教徒を見つけ出すために、キリストやマリアの像をふませたことを何という？",a:"絵踏",d:["寺請制度","五人組","刀狩"],e:"絵踏で、像をふめない人をキリスト教徒として取りしまったよ。"},
+ {ch:31,k:"しくみ",q:"寺請制度について、正しい文はどれ？",a:"人々をどこかの寺に所属させ、キリスト教徒でないことを証明させた",d:["百姓を5けん1組にして、責任を負わせた","寺に年貢を納めさせた","寺で子どもに読み・書き・そろばんを教えた"],e:"人々は必ずどこかの寺の信者になり、キリスト教徒でないことを証明させられたよ。"},
+ {ch:31,k:"順番",q:"次のできごとを、古い順にならべたものはどれ？",a:"禁教令が出る → 島原・天草一揆 → ポルトガル船の来航禁止",d:["島原・天草一揆 → 禁教令が出る → ポルトガル船の来航禁止","ポルトガル船の来航禁止 → 禁教令が出る → 島原・天草一揆","禁教令が出る → ポルトガル船の来航禁止 → 島原・天草一揆"],e:"禁教令（1612〜13年）→ 島原・天草一揆（1637年）→ ポルトガル船の来航禁止（1639年）の順だよ。"},
+ {ch:31,k:"年表",q:"1639年に来航が禁止されたのは、どこの国の船？",a:"ポルトガル",d:["オランダ","中国","朝鮮"],e:"キリスト教を広めるおそれがあるとして、ポルトガル船の来航が禁止されたよ。"},
+ {ch:31,k:"貿易",q:"鎖国のあいだも、長崎で貿易を許された国の組み合わせはどれ？",a:"オランダと中国",d:["ポルトガルとスペイン","イギリスとオランダ","スペインと中国"],e:"オランダとは出島で、中国とは長崎（のちに唐人屋敷）で貿易したよ。"},
+ {ch:31,k:"ことば",q:"オランダ商館長が幕府に差し出した、海外のようすの報告書を何という？",a:"オランダ風説書",d:["朱印状","御触書","武家諸法度"],e:"幕府はオランダ風説書で、海外の情報を手に入れていたよ。"},
+ {ch:31,k:"窓口",q:"朝鮮との交流の窓口になった藩はどこ？",a:"対馬藩",d:["松前藩","薩摩藩","長州藩"],e:"対馬藩が朝鮮との窓口。将軍がかわるたびに朝鮮通信使が来たよ。"},
+ {ch:31,k:"窓口",q:"蝦夷地のアイヌの人々と交易したのはどの藩？",a:"松前藩",d:["対馬藩","薩摩藩","加賀藩"],e:"松前藩がアイヌの人々と交易した。不利な交易に対して、シャクシャインが戦いをおこしたよ。"},
+ {ch:31,k:"農具",q:"千歯こきは、何をするための農具？",a:"稲の穂から、もみを取る（脱穀する）",d:["田畑を深く耕す","田に水をくみ上げる","米を炊く"],e:"千歯こきは脱穀の道具。田畑を深く耕すのは備中ぐわだよ。"},
+ {ch:31,k:"ことば",q:"株仲間について、正しい文はどれ？",a:"商人の同業組合で、幕府や藩に税を納めて営業を独占した",d:["武士の組合で、城を守った","百姓の組合で、年貢をへらしてもらった","寺の組合で、キリスト教徒を見つけた"],e:"株仲間は大商人の同業組合。税を納めるかわりに、営業を独占して大きな利益をあげたよ。"},
+ {ch:31,k:"都市",q:"大阪・江戸・京都の三都のうち、「天下の台所」とよばれたのは？",a:"大阪",d:["江戸","京都","長崎"],e:"大阪は商業の中心で「天下の台所」。江戸は「将軍のおひざもと」とよばれたよ。"},
+ {ch:31,k:"都市",q:"大名が、年貢米や特産物を売りさばくために大阪などに置いた建物は？",a:"蔵屋敷",d:["天守閣","唐人屋敷","寺子屋"],e:"蔵屋敷に集められた年貢米は、商人の手で売りさばかれたよ。"},
+ {ch:31,k:"交通",q:"関所で「入鉄砲に出女」をきびしく取りしまった理由はどれ？",a:"江戸に武器が入ることと、大名の妻が江戸から出ることで、反乱がおきるのを防ぐため",d:["鉄砲を外国へ売るため","女性の旅を楽しくするため","関所の通行料をふやすため"],e:"大名の妻子は江戸に住まわされていたので、こっそり国へ帰るのを見はったんだ。"},
+ {ch:31,k:"交通",q:"江戸と大阪の間で、日用品などを運んだ船はどれ？",a:"菱垣廻船",d:["朱印船","南蛮船","遣唐使船"],e:"菱垣廻船や樽廻船が、江戸と大阪を結ぶ航路を行き来したよ。"},
+ {ch:31,k:"ことば",q:"問屋が農民に原料や道具を貸して、できた製品を買い取る生産のしかたを何という？",a:"問屋制家内工業",d:["株仲間","工場制手工業","五人組"],e:"農民が家で製品をつくり、問屋が買い取るしかたを問屋制家内工業というよ。"},
+ {ch:31,k:"交通",q:"五街道の出発点はどこ？",a:"江戸の日本橋",d:["大阪の堂島","京都の三条大橋","長崎の出島"],e:"五街道は江戸の日本橋が出発点。東海道・中山道・甲州街道・日光街道・奥州街道だよ。"},
+];
+CQ.forEach((q,i)=>q.id = i);
+
+/* =========================================================
+   みるく島
+   ========================================================= */
+// 建物：x,y = 島の上の位置(%) / cost = 建てる💎（レベル2は1.5倍） / who = 来やすくなるキャラ / info = 豆知識
+const BUILDINGS = [
+ {id:"ichi",     name:"楽市の市場",   x:14, y:52, cost:150, who:["chonin","chef","neko","usagi"],               info:"織田信長は楽市・楽座で、だれでも自由に商売できるようにしたよ。"},
+ {id:"kaji",     name:"鉄砲かじ屋",   x:34, y:30, cost:200, who:["teppo","ashigaru","nanban","samurai"],         info:"鉄砲は1543年に種子島に伝わり、堺などで大量につくられたよ。"},
+ {id:"chashitsu",name:"茶室",         x:56, y:24, cost:250, who:["rikyu","hime","okuni","kabuki"],               info:"千利休は、茶の湯を茶道として大成したよ。"},
+ {id:"tenshu",   name:"天守閣",       x:46, y:46, cost:400, who:["castle","shachi","nobunaga","hideyoshi","daimyo","shogun","ieyasu"], info:"高くそびえる天守閣は、大名の力を示すために建てられたよ。"},
+ {id:"kura",     name:"蔵屋敷",       x:73, y:38, cost:250, who:["ryogae","chonin","daiku","ougon"],             info:"大名は大阪などに蔵屋敷を置いて、年貢米や特産物を売りさばいたよ。"},
+ {id:"dejima",   name:"出島",         x:84, y:66, cost:300, who:["dutch","missionary","nanban","amakusa","panda","astronaut"], info:"鎖国中、オランダとは長崎の出島で貿易したよ。"},
+ {id:"terakoya", name:"寺子屋",       x:26, y:70, cost:200, who:["terakoya","eshi","wizard","obake"],            info:"寺子屋では、子どもたちが読み・書き・そろばんを習ったよ。"},
+ {id:"shukuba",  name:"宿場",         x:50, y:72, cost:250, who:["hikyaku","ninja","tsushinshi","ryukyu","hikeshi"], info:"五街道には宿場がおかれ、大名や旅人がとまったよ。"},
+ {id:"shinden",  name:"新田",         x:70, y:58, cost:150, who:["hyakusho","hiyoko","sumo"],                    info:"江戸時代には新田開発が進み、米のとれ高がふえたよ。"},
+];
+const CHALLENGE_COST = 50;
+const lvCost = b => Math.round(b.cost * 1.5 / 10) * 10;
+const isl = () => save.island;
+const bLv = id => isl().b[id] || 0;
+const islandPoints = () => Object.values(isl().b).reduce((a,b)=>a+b,0);
+function islandTitle(){
+  const p = islandPoints();
+  return p>=14 ? "天下の都" : p>=8 ? "城下町" : p>=3 ? "にぎやかな町" : "小さな村";
+}
+const chapterCleared = chId => [0,1,2,3,4,5].some(si=>starsOf(chId,si)>0);
+const cqPool = () => CQ.filter(q=>chapterCleared(q.ch));
+
+// チャレンジャー（まだ持っていないキャラ）を島に呼ぶ
+function refreshVisitors(){
+  const v = isl().visitors.filter(id=>!save.stickers[id] && STICKERS.some(s=>s.id===id));
+  const built = BUILDINGS.filter(b=>bLv(b.id));
+  const want = Math.min(4, 1 + Math.floor(built.length/2));
+  const near = new Set(built.flatMap(b=>b.who));
+  while(v.length < want){
+    const cands = STICKERS.filter(s=>!save.stickers[s.id] && !v.includes(s.id));
+    if(!cands.length) break;
+    const w = cands.map(s=>near.has(s.id) ? 5 : 1);
+    let r = Math.random()*w.reduce((a,b)=>a+b,0), pickI = 0;
+    for(let i=0;i<cands.length;i++){ if((r -= w[i]) < 0){ pickI = i; break; } }
+    v.push(cands[pickI].id);
+  }
+  isl().visitors = v;
+  persist();
+}
+
+// 建物の絵（viewBox 0 0 100 100）
+function buildingSVG(id, lv){
+  const gold = lv>=2;
+  const flag = gold ? `<rect x="78" y="4" width="3" height="30" fill="#6b4a2a"/><path d="M81 6 L98 12 L81 18Z" fill="#ff5a5a"/>` : "";
+  const roof = c => gold ? "#c99a14" : c;
+  const art = {
+    ichi:`<rect x="14" y="44" width="5" height="44" fill="#8a5a2b"/><rect x="81" y="44" width="5" height="44" fill="#8a5a2b"/><path d="M6 48 L50 24 L94 48Z" fill="${roof("#e85d5d")}"/><path d="M28 36 L36 48 M50 24 V48 M72 36 L64 48" stroke="#fff" stroke-width="4"/><rect x="10" y="66" width="80" height="12" fill="#c08a4e"/><circle cx="28" cy="62" r="5" fill="#ff9f3a"/><circle cx="42" cy="62" r="5" fill="#86e255"/><circle cx="58" cy="62" r="5" fill="#ff5a5a"/><circle cx="72" cy="62" r="5" fill="#ffe14d"/>`,
+    kaji:`<rect x="16" y="46" width="68" height="42" fill="#b98b5a"/><path d="M8 50 L50 22 L92 50Z" fill="${roof("#6b4a2a")}"/><rect x="66" y="16" width="10" height="24" fill="#555"/><circle cx="72" cy="10" r="6" fill="#ddd" opacity=".8"/><circle cx="80" cy="2" r="5" fill="#ddd" opacity=".6"/><rect x="40" y="62" width="20" height="26" fill="#3a2a1a"/><rect x="22" y="58" width="12" height="10" fill="#ff9f3a"/>`,
+    chashitsu:`<rect x="20" y="52" width="60" height="36" fill="#e9dcb8" stroke="#8f7a4a" stroke-width="2"/><path d="M10 56 Q50 18 90 56Z" fill="${roof("#9c8a52")}"/><rect x="44" y="70" width="14" height="18" fill="#5a4a2a"/><rect x="26" y="62" width="12" height="10" fill="#fdf6e3" stroke="#8f7a4a"/><circle cx="84" cy="82" r="8" fill="#5fae5f"/>`,
+    tenshu:`<rect x="18" y="70" width="64" height="20" fill="#9aa3ad"/><rect x="26" y="52" width="48" height="20" fill="#fff"/><path d="M16 56 L50 42 L84 56Z" fill="${roof("#4a5a6a")}"/><rect x="34" y="34" width="32" height="14" fill="#fff"/><path d="M26 38 L50 22 L74 38Z" fill="${roof("#4a5a6a")}"/>${gold?`<path d="M38 22 q-6 -12 4 -16 M62 22 q6 -12 -4 -16" stroke="#f2c230" stroke-width="5" fill="none" stroke-linecap="round"/>`:""}<g fill="#4a5a6a"><rect x="32" y="58" width="7" height="8"/><rect x="47" y="58" width="7" height="8"/><rect x="61" y="58" width="7" height="8"/></g>`,
+    kura:`<rect x="20" y="40" width="60" height="48" fill="#fbfaf4" stroke="#bbb" stroke-width="2"/><rect x="20" y="72" width="60" height="16" fill="#4a4a4a"/><path d="M12 42 L50 22 L88 42Z" fill="${roof("#4a4a4a")}"/><rect x="42" y="52" width="16" height="20" fill="#6b4a2a"/>${gold?`<rect x="60" y="78" width="16" height="10" fill="#f2c230"/>`:""}`,
+    dejima:`<path d="M6 80 Q50 50 94 80 L86 94 L14 94Z" fill="#e8d49a" stroke="#b89c5a" stroke-width="2"/><rect x="26" y="62" width="18" height="14" fill="#fff"/><path d="M24 64 L35 54 L46 64Z" fill="${roof("#b05a3a")}"/><rect x="54" y="62" width="18" height="14" fill="#fff"/><path d="M52 64 L63 54 L74 64Z" fill="${roof("#b05a3a")}"/><rect x="78" y="34" width="3" height="34" fill="#6b4a2a"/><rect x="81" y="36" width="15" height="4" fill="#e33"/><rect x="81" y="40" width="15" height="4" fill="#fff"/><rect x="81" y="44" width="15" height="4" fill="#3a6ad9"/>`,
+    terakoya:`<rect x="16" y="48" width="68" height="40" fill="#e9dcb8" stroke="#8f7a4a" stroke-width="2"/><path d="M8 52 L50 24 L92 52Z" fill="${roof("#7a5a3a")}"/><rect x="30" y="34" width="40" height="14" fill="#fdf6e3" stroke="#8a5a2b"/><text x="50" y="45" font-size="10" text-anchor="middle" fill="#3a2a1a" font-weight="bold">寺子屋</text><rect x="30" y="64" width="40" height="8" fill="#8a5a2b"/>`,
+    shukuba:`<rect x="14" y="46" width="72" height="42" fill="#d9b98a" stroke="#8a5a2b" stroke-width="2"/><path d="M6 50 L50 24 L94 50Z" fill="${roof("#5a3a2a")}"/><ellipse cx="26" cy="62" rx="7" ry="9" fill="#ff5a5a"/><text x="26" y="66" font-size="8" text-anchor="middle" fill="#fff">宿</text><rect x="40" y="62" width="22" height="26" fill="#5a3a2a"/><rect x="68" y="58" width="12" height="12" fill="#fdf6e3"/>`,
+    shinden:`<rect x="8" y="50" width="40" height="18" fill="${gold?"#e8c95a":"#7fc46a"}" stroke="#8a6a3a" stroke-width="2"/><rect x="52" y="50" width="40" height="18" fill="${gold?"#e8c95a":"#7fc46a"}" stroke="#8a6a3a" stroke-width="2"/><rect x="8" y="72" width="40" height="18" fill="#9ad08a" stroke="#8a6a3a" stroke-width="2"/><rect x="52" y="72" width="40" height="18" fill="${gold?"#e8c95a":"#9ad08a"}" stroke="#8a6a3a" stroke-width="2"/>${[14,24,34,58,68,78].map(x=>`<path d="M${x} 66 v-10 M${x+4} 66 v-8" stroke="#3f8f4f" stroke-width="2"/>`).join("")}`,
+  };
+  return `<svg viewBox="0 0 100 100">${art[id]}${flag}${gold?STAR(16,20,.8,"#ffd34d")+STAR(90,52,.6,"#ffd34d"):""}</svg>`;
+}
+// 足場（建てる前）
+const LOT_SVG = `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="82" rx="40" ry="12" fill="#d8c48a" stroke="#b89c5a" stroke-width="2" stroke-dasharray="6 4"/><rect x="47" y="44" width="4" height="40" fill="#8a5a2b"/><rect x="34" y="40" width="30" height="14" rx="2" fill="#fdf6e3" stroke="#8a5a2b" stroke-width="2"/><text x="49" y="51" font-size="9" text-anchor="middle" fill="#8a5a2b">🔨</text></svg>`;
+
+// ちいさなキャラ（シールの絵を、まるい枠なしで使う）
+const miniChar = st => stickerSVG(st);
+
+function openIsland(){ refreshVisitors(); show("island"); renderIsland(); }
+function renderIsland(){
+  const owned = STICKERS.filter(s=>save.stickers[s.id]);
+  // 仲間を島のあちこちに（最大12人）。毎回同じ場所になるように、名前から位置を決める
+  const spots = [[8,38],[22,44],[30,56],[40,62],[60,40],[64,64],[78,50],[36,80],[60,82],[18,62],[88,46],[46,32]];
+  const shown = owned.slice(0,12);
+  const friends = shown.map((st,i)=>{
+    const [x,y] = spots[i];
+    return `<button class="ichar" data-silent="1" style="left:${x}%;top:${y}%;--d:${2.4+(i%5)*.5}s" onclick="tapFriend('${st.id}',this)">${miniChar(st)}</button>`;
+  }).join("");
+  const vspots = [[22,84],[86,30],[42,90],[72,88]];
+  const visitors = isl().visitors.map((id,i)=>{
+    const st = STICKERS.find(s=>s.id===id); const [x,y] = vspots[i];
+    return `<button class="ichar visitor" data-silent="1" style="left:${x}%;top:${y}%" onclick="tapVisitor('${id}')"><span class="v-mark">！</span>${miniChar(st)}</button>`;
+  }).join("");
+  const blds = BUILDINGS.map(b=>{
+    const lv = bLv(b.id);
+    return `<button class="ibld ${lv?"built":"lot"} ${lv>=2?"lv2":""}" style="left:${b.x}%;top:${b.y}%" onclick="tapBuilding('${b.id}')">
+      ${lv?buildingSVG(b.id,lv):LOT_SVG}<span class="ib-name">${lv?b.name:"空き地"}</span></button>`;
+  }).join("");
+  document.getElementById("island").innerHTML = `
+    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">🏝️ みるく島</div><div class="stat" id="iGem">💎 ${save.xp}</div></div>
+    <div class="isl-head">
+      <div><div class="isl-title">「${islandTitle()}」</div><div class="small-note" style="margin:0;text-align:left">建物 ${BUILDINGS.filter(b=>bLv(b.id)).length}/${BUILDINGS.length} ・ 仲間 ${owned.length}/${STICKERS.length}人</div></div>
+      <button class="btn gray" style="padding:8px 14px;font-size:15px" onclick="islandHelp()">？ あそびかた</button>
+    </div>
+    <div class="isl-map">
+      <svg class="isl-bg" viewBox="0 0 400 300" preserveAspectRatio="none">
+        <rect width="400" height="300" fill="#7fd0f0"/>
+        <path d="M0 40 q20 -8 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 M0 270 q20 -8 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#fff" stroke-width="3" fill="none" opacity=".5"/>
+        <path d="M30 150 Q20 70 120 50 Q220 20 320 60 Q395 90 380 170 Q370 260 260 275 Q150 290 70 250 Q30 225 30 150Z" fill="#f3e2a8"/>
+        <path d="M48 150 Q42 84 126 66 Q220 40 312 76 Q372 100 362 168 Q352 244 258 258 Q156 272 82 236 Q48 214 48 150Z" fill="#9ad97a"/>
+        ${[[70,110],[340,120],[110,230],[300,230],[200,60]].map(([x,y])=>`<g transform="translate(${x} ${y})"><rect x="-3" y="0" width="6" height="18" fill="#8a5a2b"/><circle cx="0" cy="-4" r="13" fill="#4fa35f"/></g>`).join("")}
+      </svg>
+      ${blds}${friends}${visitors}
+      <div class="ibubble" id="ibubble"></div>
+    </div>
+    <div class="small-note">${isl().visitors.length?`<b style="color:#e33">！</b> のキャラクターは、まだ仲間になっていないチャレンジャー。タップして勝負しよう！`:"チャレンジャーは、建物がふえるとやってくるよ"}</div>
+    <div class="row"><button class="btn gray wide" onclick="goHome()">ホームへもどる</button></div>`;
+}
+function islandHelp(){
+  showModal(`<h2>🏝️ みるく島のあそびかた</h2>
+    <div class="bubble" style="text-align:left;line-height:1.8">
+    🔨 <b>空き地</b>をタップすると、💎で歴史の建物が建てられるよ。もう一度💎を使うとレベル2！<br>
+    🧑‍🤝‍🧑 ガチャやチャレンジで集めたシールのキャラが、島でくらしているよ。タップするとお話してくれるよ。<br>
+    ❗ <b>！</b>がついたキャラは、まだ仲間じゃないチャレンジャー。💎${CHALLENGE_COST}で勝負して、テストに出る問題に<b>3問とも正解</b>すると、シールがもらえて仲間になるよ！<br>
+    🏯 建物に関係のあるキャラが、島に来やすくなるよ。<br>
+    📖 問題は、ステージを1つ以上クリアした回から出るよ。</div>
+    <button class="btn gray wide" onclick="closeModal()">とじる</button>`);
+}
+function tapFriend(id, el){
+  const st = STICKERS.find(s=>s.id===id);
+  const b = document.getElementById("ibubble");
+  b.innerHTML = `<b>${st.name}</b>：${esc(st.desc)}`;
+  b.style.left = Math.min(60, parseFloat(el.style.left)) + "%";
+  b.style.top = Math.max(2, parseFloat(el.style.top) - 22) + "%";
+  b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+  el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop");
+  SFX.pop(); speak(st.desc);
+}
+function tapBuilding(id){
+  const b = BUILDINGS.find(x=>x.id===id), lv = bLv(id);
+  const whoHTML = b.who.map(sid=>{ const st = STICKERS.find(s=>s.id===sid); const have = save.stickers[sid];
+    return `<div class="who-cell">${stickerHTML(st, !have)}<div class="stk-name">${have?st.name:"？？？"}</div></div>`; }).join("");
+  const cost = lv===0 ? b.cost : lvCost(b);
+  const can = save.xp >= cost;
+  const btn = lv>=2 ? `<div class="small-note">✨ さいだいレベル！</div>`
+    : `<button class="btn ${can?"gold":"gray"} wide" ${can?"":"disabled"} onclick="buildIt('${id}')">${lv?"⬆️ レベル2にする":"🔨 建てる"}（💎${cost}）${can?"":`<br><small>あと💎${cost-save.xp}</small>`}</button>`;
+  showModal(`<h2>${lv?"🏯":"🔨"} ${b.name}${lv?`（レベル${lv}）`:""}</h2>
+    <div class="bld-big">${lv?buildingSVG(id,lv):buildingSVG(id,1).replace("<svg ",'<svg style="filter:grayscale(1);opacity:.45" ')}</div>
+    <div class="bubble" style="text-align:left;margin:6px 0 10px">💡 ${b.info}</div>
+    <div class="small-note" style="text-align:left;margin:0">この建物があると、来やすくなるキャラ：</div>
+    <div class="who-row">${whoHTML}</div>
+    ${btn}
+    <div class="row"><button class="btn gray wide" onclick="closeModal()">とじる</button></div>`);
+}
+SFX.hammer = () => { [0,.22,.44].forEach(t=>{ tone(180,t,.08,"square",.12,90); tone(900,t,.05,"triangle",.08); }); };
+function buildIt(id){
+  const b = BUILDINGS.find(x=>x.id===id), lv = bLv(id);
+  const cost = lv===0 ? b.cost : lvCost(b);
+  if(lv>=2 || save.xp < cost) return;
+  save.xp -= cost;
+  isl().b[id] = lv + 1;
+  persist();
+  closeModal();
+  renderIsland();
+  const el = [...document.querySelectorAll(".ibld")][BUILDINGS.indexOf(b)];
+  el.classList.add("building");
+  SFX.hammer(); setTimeout(()=>SFX.hammer(), 700);
+  speak(lv ? `${b.name}を、もっとりっぱにしよう！` : `${b.name}を建てるよ！トンカチ、トンカチ！`);
+  setTimeout(()=>{
+    el.classList.remove("building"); el.classList.add("done");
+    SFX.clear(); confetti();
+    const before = isl().visitors.length;
+    refreshVisitors();
+    const came = isl().visitors.length - before;
+    setTimeout(()=>{
+      renderIsland();
+      showModal(`<div style="text-align:center"><h2>🎉 ${b.name}が${lv?"レベル2になった":"できた"}！</h2>
+        <div class="bld-big">${buildingSVG(id, lv+1)}</div>
+        <div class="bubble" style="text-align:left;margin:8px 0">💡 ${b.info}</div>
+        <div class="isl-title" style="margin:6px 0">島のランク：「${islandTitle()}」</div>
+        ${came>0?`<div class="mastered-badge">❗ 新しいチャレンジャーが ${came}人 やってきた！</div>`:""}
+        <button class="btn blue wide" onclick="closeModal()">やったね！</button></div>`);
+      speak(b.info);
+    }, 600);
+  }, 1500);
+}
+
+// ---- チャレンジ（勝負） ----
+let CH = null; // {st, qs, i, timer, hintUsed}
+function tapVisitor(id){
+  const st = STICKERS.find(s=>s.id===id);
+  const pool = cqPool();
+  const can = save.xp >= CHALLENGE_COST && pool.length >= 3;
+  const rule = st.r==="SR" ? "⏱️ 1問20秒の制限時間つき！" : st.r==="R" ? "ヒントなしで勝負！" : "💡 1問に1回、ヒントが使えるよ";
+  showModal(`<div style="text-align:center">
+    ${stickerHTML(st, false, "big-stk")}
+    <h2>${st.name} があらわれた！</h2>
+    <div class="rv-rar">${RARITY[st.r].stars} ${RARITY[st.r].name}</div>
+    <div class="bubble" style="text-align:left;margin:10px 0">「わたしの問題に <b>3問とも正解</b> できたら、仲間になってあげる！」<br><small>${rule}</small></div>
+    ${pool.length<3?`<div class="small-note" style="color:#e33">まずはステージを1つクリアしてね。クリアした回の問題が出るよ</div>`:""}
+    <button class="btn red wide ${can?"shine":""}" ${can?"":"disabled"} onclick="startChallenge('${id}')">⚔️ 勝負する（💎${CHALLENGE_COST}）${save.xp<CHALLENGE_COST?`<br><small>あと💎${CHALLENGE_COST-save.xp}</small>`:""}</button>
+    <div class="row"><button class="btn gray wide" onclick="closeModal()">またこんど</button></div></div>`);
+  speak(`${st.name}があらわれた！3問とも正解できたら、仲間になってあげる！`);
+}
+function pickCQ(n){
+  const seen = isl().cq;
+  return cqPool().map(q=>({q, k:(seen[q.id]||0) + Math.random()*1.5})).sort((a,b)=>a.k-b.k).slice(0,n).map(x=>x.q);
+}
+function startChallenge(id){
+  if(save.xp < CHALLENGE_COST || cqPool().length < 3) return;
+  save.xp -= CHALLENGE_COST;
+  const qs = pickCQ(3);
+  qs.forEach(q=>{ isl().cq[q.id] = (isl().cq[q.id]||0) + 1; });
+  persist();
+  closeModal();
+  CH = {st: STICKERS.find(s=>s.id===id), qs, i:0, timer:null};
+  show("challenge");
+  SFX.ratchet();
+  renderCQ();
+}
+function renderCQ(){
+  clearInterval(CH.timer);
+  const {st, qs, i} = CH, q = qs[i];
+  CH.locked = false; CH.hint = false;
+  const ch = CHAPTERS.find(c=>c.id===q.ch);
+  const opts = shuffle([q.a, ...q.d]);
+  document.getElementById("challenge").innerHTML = `
+    <div class="quiz-top"><button class="quit" onclick="quitChallenge()">✕</button>
+      <div class="cq-dots">${qs.map((_,k)=>`<span class="${k<i?"ok":k===i?"now":""}">${k<i?"⭕":k+1}</span>`).join("")}</div>
+      <div class="stat">${RARITY[st.r].stars}</div></div>
+    <div class="teacher-row">
+      <div class="cq-face">${stickerHTML(st)}</div>
+      <div class="bubble"><div class="tname">${st.name}の チャレンジ問題（第${i+1}問）</div>
+        <span class="cq-kind" style="background:${ch.color}">第${q.ch}回 ・ ${q.k}</span>
+        <div class="cq-q">${esc(q.q)}</div></div>
+    </div>
+    ${st.r==="SR"?`<div class="cq-time"><div id="cqBar"></div></div>`:""}
+    <div class="cq-choices">${opts.map(o=>`<button class="choice cq-choice" data-silent="1" data-v="${esc(o)}" onclick="answerCQ(this)">${esc(o)}</button>`).join("")}</div>
+    ${st.r==="N"?`<div class="row"><button class="btn gray" id="cqHint" onclick="cqHint()">💡 ヒント（2つ消す）</button></div>`:""}
+    <div id="cqFb"></div>`;
+  speak(q.q);
+  if(st.r==="SR"){
+    const T = 20, t0 = Date.now();
+    CH.timer = setInterval(()=>{
+      const left = T - (Date.now()-t0)/1000;
+      const bar = document.getElementById("cqBar"); if(bar) bar.style.width = Math.max(0,left/T*100)+"%";
+      if(left <= 0){ clearInterval(CH.timer); answerCQ(null); }
+    }, 100);
+  }
+}
+function cqHint(){
+  if(CH.locked || CH.hint) return;
+  CH.hint = true;
+  const q = CH.qs[CH.i];
+  shuffle([...document.querySelectorAll(".cq-choice")].filter(b=>b.dataset.v!==q.a)).slice(0,2).forEach(b=>{ b.disabled = true; b.classList.add("gone"); });
+  document.getElementById("cqHint").disabled = true;
+  SFX.pop();
+}
+function answerCQ(btn){
+  if(CH.locked) return;
+  CH.locked = true;
+  clearInterval(CH.timer);
+  const q = CH.qs[CH.i];
+  const ok = btn && btn.dataset.v === q.a;
+  document.querySelectorAll(".cq-choice").forEach(b=>{ b.disabled = true; if(b.dataset.v===q.a) b.classList.add("ok"); });
+  if(btn && !ok) btn.classList.add("ng");
+  document.getElementById("cqHint")?.setAttribute("disabled","");
+  if(ok){
+    SFX.correct();
+    const last = CH.i === CH.qs.length-1;
+    document.getElementById("cqFb").innerHTML = `<div class="cq-fb good"><b>⭕ 正解！</b> ${esc(q.e)}
+      <button class="btn wide" style="margin-top:10px" onclick="${last?"cqWin()":"CH.i++;renderCQ()"}">${last?"🎉 けっかを見る":"つぎの問題へ"}</button></div>`;
+    speak("正解！");
+  }else{
+    SFX.wrong();
+    document.getElementById("cqFb").innerHTML = `<div class="cq-fb bad"><b>❌ ${btn?"ざんねん！":"時間切れ！"}</b> こたえ：<b>${esc(q.a)}</b><br>${esc(q.e)}
+      <button class="btn red wide" style="margin-top:10px" onclick="cqLose()">けっかを見る</button></div>`;
+    speak(`${btn?"ざんねん":"時間切れ"}。こたえは、${q.a}、だよ`);
+  }
+  document.getElementById("cqFb").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+function cqWin(){
+  const st = CH.st;
+  save.stickers[st.id] = (save.stickers[st.id]||0) + 1;
+  isl().visitors = isl().visitors.filter(id=>id!==st.id);
+  persist();
+  refreshVisitors();
+  document.getElementById("challenge").innerHTML = `
+    <div class="cq-result">
+      <div class="rays ${st.r}" style="position:absolute;top:180px"></div>
+      <h1 style="position:relative">🎉 3問とも正解！</h1>
+      <div style="position:relative;width:220px;margin:10px auto">${stickerHTML(st)}</div>
+      <div class="rv-name" style="position:relative">${st.name} が なかまになった！</div>
+      <div class="rv-new" style="position:relative;display:inline-block">シールゲット！</div>
+      <div class="row" style="position:relative;margin-top:20px">
+        <button class="btn blue" onclick="openBook()">📖 シール帳</button>
+        <button class="btn gold" onclick="openIsland()">🏝️ 島へもどる</button>
+      </div>
+    </div>`;
+  SFX["reveal"+st.r](); confetti();
+  speak(`やったね！${st.name}が、なかまになった！`);
+}
+function cqLose(){
+  const st = CH.st;
+  const can = save.xp >= CHALLENGE_COST;
+  document.getElementById("challenge").innerHTML = `
+    <div class="cq-result">
+      <h1>ざんねん…</h1>
+      <div style="width:180px;margin:10px auto">${stickerHTML(st)}</div>
+      <div class="bubble" style="text-align:left">${st.name}「また挑戦してね！ 島で待ってるよ」<br><small>まちがえた問題の説明を読んで、もう一回チャレンジしよう。問題は入れかわるよ</small></div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn gray" onclick="openIsland()">🏝️ 島へもどる</button>
+        <button class="btn red" ${can?"":"disabled"} onclick="startChallenge('${st.id}')">⚔️ もう一回（💎${CHALLENGE_COST}）</button>
+      </div>
+    </div>`;
+  SFX.fail(); speak(`${st.name}、また挑戦してね！`);
+}
+function quitChallenge(){
+  if(!confirm("勝負をやめる？（💎はもどらないよ）")) return;
+  clearInterval(CH.timer);
+  openIsland();
 }
 
 renderHome();
