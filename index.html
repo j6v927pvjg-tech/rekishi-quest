@@ -688,7 +688,8 @@ const pick = a => a[Math.floor(Math.random()*a.length)];
 const SAVE_KEY = "rekishi-quest-v1";
 function defaultSave(){
   return {stars:{}, xp:0, streak:{last:null,count:0}, settings:{sfx:true, voice:true, autoRead:false},
-          mastery:{},   // 問題ごとの連続正解数（3で「おぼえた！」）
+          mastery:{},   // 問題ごとの連続正解数（4択。3で「おぼえた！」）
+          masteryHand:{}, // 手書きの連続正解数（4択とは別に数える）
           wrong:{},     // 一度でもまちがえた問題
           gauge:0,      // ガチャゲージ（3でガチャ1回）
           tickets:0,    // まわせるガチャの回数
@@ -852,13 +853,20 @@ function teacherMood(mood, anim){
 CHAPTERS.forEach(ch=>ch.stages.forEach((s,si)=>s.qs.forEach((q,i)=>{ q.id = `${ch.id}-${si}-${i}`; })));
 const ALL_QS = CHAPTERS.flatMap(ch=>ch.stages.flatMap(s=>s.qs));
 const MASTER = 3;
-const masteryOf  = q => save.mastery[q.id] || 0;
+// おぼえた度は「4択」と「手書き」で別々に数える（手書きでまちがえても4択の分は減らない）
+const mBook      = mode => mode==="hand" ? (save.masteryHand = save.masteryHand || {}) : save.mastery;
+const masteryIn  = (q, mode) => mBook(mode)[q.id] || 0;
+const setMastery = (q, mode, v) => { mBook(mode)[q.id] = v; };
+// どちらかで3回連続正解していれば「おぼえた」
+const masteryOf  = q => Math.max(masteryIn(q,"choice"), masteryIn(q,"hand"));
 const isMastered = q => masteryOf(q) >= MASTER;
+const ansMode    = q => q.o4 ? "choice" : Q.mode;   // この問題を今どの答え方で解いているか
 const stagePool  = (ch, si) => si===5 ? ch.stages.flatMap(s=>s.qs) : ch.stages[si].qs;
 const weakList   = () => ALL_QS.filter(q=>save.wrong[q.id] && !isMastered(q));
 // まだおぼえていない問題を優先して選ぶ（少しだけランダムをまぜる）
-function pickQuestions(pool, n){
-  const picked = pool.map(q=>({q, k:Math.min(masteryOf(q),MASTER) + Math.random()*0.9}))
+function pickQuestions(pool, n, mode){
+  const mm = q => mode ? masteryIn(q, q.o4 ? "choice" : mode) : masteryOf(q);   // 答え方ごとに、まだの問題を優先
+  const picked = pool.map(q=>({q, k:Math.min(mm(q),MASTER) + Math.random()*0.9}))
                      .sort((a,b)=>a.k-b.k).slice(0,n).map(x=>x.q);
   return shuffle(picked);
 }
@@ -1372,12 +1380,12 @@ function startStage(chId, si, mode){
   const ch = CHAPTERS.find(c=>c.id===chId);
   const pool = stagePool(ch, si);
   const n = si===5 ? 12 : Math.min(8, pool.length);
-  startSession({kind:"stage", ch, si, mode, title: si===5 ? "まとめテスト" : ch.stages[si].name, list: pickQuestions(pool, n)});
+  startSession({kind:"stage", ch, si, mode, title: si===5 ? "まとめテスト" : ch.stages[si].name, list: pickQuestions(pool, n, mode)});
 }
 function startReview(mode){
   const weak = weakList();
   if(!weak.length){ goHome(); return; }
-  startSession({kind:"review", mode, title:"にがて復習", list: pickQuestions(weak, Math.min(10, weak.length))});
+  startSession({kind:"review", mode, title:"にがて復習", list: pickQuestions(weak, Math.min(10, weak.length), mode)});
 }
 function restartSession(){ Q.kind==="review" ? startReview(Q.mode) : startStage(Q.ch.id, Q.si, Q.mode); }
 
@@ -1395,7 +1403,7 @@ function nextQuestion(){
   Q.locked = false;
   const {q, retry} = Q.current;
   const mode = q.o4 ? "choice" : Q.mode;
-  const m = masteryOf(q);
+  const m = masteryIn(q, mode);
   const el = document.getElementById("quiz");
   el.innerHTML = `
     <div class="quiz-top">
@@ -1575,21 +1583,23 @@ function selfGrade(){
 function selfAnswer(ok){ Q.locked=false; hideFeedback(); judge(ok, ""); }
 
 /* --- 正解・不正解の判定 --- */
-const meterHTML = m => `<div class="m-meter">おぼえた度 <b>${"●".repeat(m)}${"○".repeat(MASTER-m)}</b>${m<MASTER?`（あと${MASTER-m}回連続で正解すると「おぼえた！」）`:""}</div>`;
+const meterHTML = (m, mode) => `<div class="m-meter">${mode==="hand"?"✍️ 手書き":"🔢 4択"}のおぼえた度 <b>${"●".repeat(m)}${"○".repeat(MASTER-m)}</b>${m<MASTER?`（あと${MASTER-m}回連続で正解すると「おぼえた！」）`:""}</div>`;
 function judge(ok, userText="", opt={}){
   if(Q.locked) return;
   Q.locked = true;
   const {q, retry} = Q.current;
   // おぼえた度を記録（「字はあってた！」で元にもどせるように、前の値もとっておく）
-  Q.prev = {m: masteryOf(q), wrong: !!save.wrong[q.id]};
-  let justLearned = false;
+  const mode = ansMode(q);
+  Q.prev = {m: masteryIn(q, mode), any: isMastered(q), wrong: !!save.wrong[q.id], mode};
+  let justLearned = false, modeLearned = false;
   if(ok){
     const m = Math.min(MASTER, Q.prev.m + 1);
-    save.mastery[q.id] = m;
-    justLearned = m===MASTER && Q.prev.m<MASTER;
+    setMastery(q, mode, m);
+    modeLearned = m===MASTER && Q.prev.m<MASTER;   // この答え方で、はじめて3回連続
+    justLearned = modeLearned && !Q.prev.any;      // 問題として、はじめて「おぼえた」（マンガのポイントは1回だけ）
     if(justLearned){ Q.learned.push(q); Q.newManga = addMangaPoint(); Q.newExam = examReady(+q.id.split("-")[0]); }
   }else{
-    save.mastery[q.id] = 0;
+    setMastery(q, mode, 0);   // まちがえた答え方の分だけ 0 にもどす
     save.wrong[q.id] = true;
   }
   persist();
@@ -1607,7 +1617,7 @@ function judge(ok, userText="", opt={}){
     const line = justLearned ? "おぼえたね！すごい！" : Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
     speak(line);
     showFeedback("good", `<div class="fb-title">⭕ ${line}</div>
-      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}${Q.newExam?"<br>📝 本番テストが出てきたよ！"+(allReady()?"<br>🏆 総まとめテストも出てきたよ！":""):""}</div>`:meterHTML(save.mastery[q.id])}
+      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}${Q.newExam?"<br>📝 本番テストが出てきたよ！"+(allReady()?"<br>🏆 総まとめテストも出てきたよ！":""):""}</div>`:modeLearned?`<div class="mastered-badge">${mode==="hand"?"✍️ 手書き":"🔢 4択"}でも おぼえた！</div>`:meterHTML(masteryIn(q,mode), mode)}
       ${userText && opt.hand ? `<div class="fb-exp">よみとった字：「${esc(userText)}」</div>`:""}
       <div class="fb-exp">${esc(q.e||"")}</div>
       <button class="btn wide" onclick="afterAnswer()">つぎへ</button>`);
@@ -1636,9 +1646,9 @@ function overrideHand(){
   const i = Q.missed.indexOf(q); if(i>=0) Q.missed.splice(i,1);
   if(!Q.current.retry) Q.firstTry++;
   const m = Math.min(MASTER, Q.prev.m + 1);
-  save.mastery[q.id] = m;
+  setMastery(q, Q.prev.mode, m);
   if(!Q.prev.wrong) delete save.wrong[q.id];
-  if(m===MASTER && Q.prev.m<MASTER){ Q.learned.push(q); addMangaPoint(); }
+  if(m===MASTER && Q.prev.m<MASTER && !Q.prev.any){ Q.learned.push(q); addMangaPoint(); }
   persist();
   Q.xp += 10; SFX.correct(); xpPop("+10"); teacherMood("happy","jump"); speak("ごめんね、ちゃんと書けてたね！");
   afterAnswer();
