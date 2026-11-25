@@ -397,6 +397,36 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 .cq-choice.gone{opacity:.25}
 .cq-fb{margin-top:14px;border-radius:18px;padding:14px;font-size:17px;line-height:1.6}
 .cq-fb.good{background:#e6f9d8}.cq-fb.bad{background:#ffe6e6}
+/* 本番テスト */
+.ring.exam{background:conic-gradient(#ff7a7a calc(var(--p)*1%),#e9ecdb 0)}
+.node.boss.exam{background:#fff;border-color:#e85d5d}
+.ex-rules{text-align:left;background:#fffdf3;border:2px dashed #e1d6a8;border-radius:16px;padding:12px 16px;margin:12px 0;font-size:17px;line-height:1.9}
+.ex-time{font-size:20px;font-weight:bold;min-width:90px;text-align:right}
+.ex-time.hurry{color:#e33;animation:pulse 1s infinite}
+.ex-nums{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin:6px 0 12px}
+.ex-nums button{border:none;border-radius:10px;padding:8px 0;font-size:16px;font-weight:bold;background:#e1e5cf;color:#555;font-family:inherit}
+.ex-nums button.done{background:#cfe8ff;color:#245a8a}
+.ex-nums button.now{outline:3px solid #ffc83d;background:#fff3c4;color:#a06a00}
+.ex-paper{background:#fff;border-radius:20px;padding:16px 18px;box-shadow:0 4px 0 #e1d6a8;background-image:repeating-linear-gradient(transparent 0 35px,#f1ecd8 35px 36px)}
+.ex-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ex-pt{font-size:14px;color:#888}
+.ex-say{margin-left:auto;border:none;background:#f1ecd8;border-radius:50%;width:40px;height:40px;font-size:20px}
+.ex-choice.picked{background:#cfe8ff;border-color:#3a9ad9;box-shadow:0 4px 0 #3a9ad9}
+.ex-mark{display:inline-block;width:28px;height:28px;line-height:28px;border-radius:50%;background:#f1ecd8;text-align:center;margin-right:10px;font-weight:bold}
+.ex-choice.picked .ex-mark{background:#3a9ad9;color:#fff}
+.ex-nav{margin-top:12px}
+.ex-result{text-align:center;padding:10px 0}
+.ex-score{font-size:96px;font-weight:bold;color:#e33;line-height:1.1}
+.ex-score small{font-size:32px;margin-left:4px}
+.ex-stamp{display:inline-block;font-size:24px;font-weight:bold;border:4px solid currentColor;border-radius:14px;padding:4px 16px;transform:rotate(-6deg);margin:8px 0}
+.ex-stamp.s100{color:#e33}.ex-stamp.s80{color:#e88a1a}.ex-stamp.s60{color:#3a9ad9}.ex-stamp.s0{color:#7a8a5a}
+.ex-reward{font-size:20px;font-weight:bold;margin-top:6px}
+.ex-review{display:flex;flex-direction:column;gap:10px}
+.ex-row{background:#fff;border-radius:14px;padding:12px 14px;font-size:16px;line-height:1.6;border-left:8px solid #8fd06a}
+.ex-row.ng{border-left-color:#ff7a7a;background:#fff6f6}
+.ex-a{margin-top:4px;color:#555}
+.ex-e{margin-top:4px;font-size:15px;color:#666;background:#fffbe6;border-radius:10px;padding:6px 10px}
+
 .cq-result{position:relative;text-align:center;padding-top:20px;overflow:hidden;min-height:520px}
 
 @media (max-width:560px){ .hub{grid-template-columns:1fr} .book-grid{grid-template-columns:repeat(3,1fr)} }
@@ -432,6 +462,7 @@ canvas.pad{display:block;width:100%;height:230px;touch-action:none}
 <!-- みるく島とチャレンジ -->
 <div id="island" class="screen"></div>
 <div id="challenge" class="screen"></div>
+<div id="exam" class="screen"></div>
 
 <div id="modal" class="modal"><div class="sheet" id="sheet"></div></div>
 <div id="feedback" class="feedback"><div class="inner" id="fbInner"></div></div>
@@ -662,7 +693,8 @@ function defaultSave(){
           tickets:0,    // まわせるガチャの回数
           stickers:{},  // 持っているシールと枚数
           manga:{gauge:0, open:1, seen:{}},
-          island:{b:{}, visitors:[], cq:{}}};  // みるく島：建物のレベル・チャレンジャー・出た問題の回数 // マンガゲージ（5で1話）・読める話の数（1話目は最初から）・読んだ話
+          island:{b:{}, visitors:[], cq:{}},
+          exam:{}};  // みるく島：建物のレベル・チャレンジャー・出た問題の回数 // マンガゲージ（5で1話）・読める話の数（1話目は最初から）・読んだ話
 }
 function loadSave(){
   try{
@@ -849,7 +881,7 @@ document.addEventListener("pointerup", e=>{
 }, true);
 
 /* =========================================================
-   みるく先生の仮装シール（40種類）
+   みるく先生の仮装シール（52種類）
    back: 体のうしろ / body: 服 / legs: はかま等の色
    face: 顔の上（目の下） / top: いちばん上（ぼうし・小物）
    ========================================================= */
@@ -1043,7 +1075,59 @@ const STICKERS = [
    desc:"おまけのシール！ 金ぴかのみるく先生。豊臣秀吉は、金ぱくをはった「黄金の茶室」を作ったといわれているよ。",
    body:cloth("#f2c230"), legs:"#e0b020",
    face:`<ellipse cx="98" cy="86" rx="82" ry="72" fill="#f5cf3a"/><ellipse cx="66" cy="50" rx="26" ry="14" fill="#fff6c0" opacity=".8"/>`,
-   top:STAR(20,10,1.4,"#fff")+STAR(176,30,1,"#fff")+STAR(170,-30,1.3,"#ffe98a")},
+   top:STAR(20,10,1.4,"#fff")+STAR(176,30,1,"#fff")+STAR(170,-30,1.3,"#ffe98a")},  // ---- ここから追加の12種類 ----
+  {id:"kajiya", name:"かじや", r:"N", bg:"#ffe8d6",
+   desc:"鉄砲が伝わると、堺（大阪府）や国友（滋賀県）のかじ職人たちが、たくさんの鉄砲を作るようになったよ。",
+   body:cloth("#6b4a2b")+`<rect x="80" y="126" width="64" height="50" rx="8" fill="#a8733f"/>`, legs:"#4a3420",
+   top:`<path d="M20 58 Q98 36 176 58" stroke="#fff" stroke-width="10" fill="none"/><path d="M170 54 l16 -14 M170 58 l18 -2" stroke="#fff" stroke-width="6" stroke-linecap="round"/><g transform="rotate(-30 160 150)"><rect x="156" y="120" width="8" height="54" rx="3" fill="#8a5a2b"/><rect x="142" y="110" width="36" height="18" rx="4" fill="#555"/></g>${DOTS([[132,108,3],[124,98,2.5],[140,96,2]],"#ff9a2a")}`},
+  {id:"furiuri", name:"ふりうり", r:"N", bg:"#eaf6dc", eyes:"happy",
+   desc:"江戸の町には、てんびん棒に野菜や魚をつるして、売り歩く「ふり売り」がたくさんいたよ。",
+   back:`<rect x="-4" y="80" width="204" height="7" rx="3" fill="#8a5a2b"/><path d="M4 86 L-2 104 M16 86 L22 104 M180 86 L174 104 M192 86 L198 104" stroke="#8a5a2b" stroke-width="2"/>${DOTS([[4,102,7],[16,99,7]],"#5fae4a")}${DOTS([[180,101,7],[192,99,7]],"#e8743a")}<rect x="-6" y="104" width="32" height="26" rx="6" fill="#d9b66a" stroke="#a8843e" stroke-width="2"/><rect x="170" y="104" width="32" height="26" rx="6" fill="#d9b66a" stroke="#a8843e" stroke-width="2"/>`,
+   body:cloth("#4f7a3a"), legs:"#3a5a2a",
+   top:`<ellipse cx="98" cy="22" rx="60" ry="12" fill="#d9b66a" stroke="#a8843e" stroke-width="3"/><ellipse cx="98" cy="16" rx="26" ry="10" fill="#e6c77e"/>`},
+  {id:"funanori", name:"ふなのり", r:"N", bg:"#dcefff",
+   desc:"江戸時代には、大阪から江戸へ「ひがき廻船」や「たる廻船」という船で、たくさんの荷物が運ばれたよ。",
+   body:cloth("#2f5d8a")+`<path d="M62 136 H162 M58 150 H166 M62 164 H162" stroke="#fff" stroke-width="5"/>`, legs:"#24466b",
+   top:`<path d="M20 58 Q98 36 176 58" stroke="#e33b3b" stroke-width="10" fill="none"/><g transform="translate(150 132)" stroke="#5a6a7a" stroke-width="6" fill="none" stroke-linecap="round"><path d="M0 -20 V20 M-16 8 Q0 26 16 8"/><circle cx="0" cy="-26" r="6"/></g>`},
+  {id:"ryoshi", name:"りょうし", r:"N", bg:"#e3f3f7",
+   desc:"九十九里浜（千葉県）では、いわし漁がさかん。とれたいわしは「ほしか」という肥料になって、畑の作物を育てたよ。",
+   body:cloth("#5a7d9a"), legs:"#3e5a72",
+   top:`<path d="M22 42 L98 -12 L174 42 Q98 54 22 42Z" fill="#d9b66a" stroke="#a8843e" stroke-width="3"/><g transform="rotate(-15 146 146)"><ellipse cx="146" cy="146" rx="28" ry="11" fill="#8fb3d9" stroke="#5f86b0" stroke-width="2"/><path d="M172 146 l14 -10 v20z" fill="#8fb3d9" stroke="#5f86b0" stroke-width="2"/><circle cx="128" cy="143" r="2.6" fill="#222"/></g>`},
+  {id:"inu", name:"いぬ", r:"N", bg:"#fff0e0", eyes:"happy",
+   desc:"5代将軍の徳川綱吉は「生類あわれみの令」を出して、犬などの生き物を大切にするように命じたよ。",
+   body:`<path d="M60 130 Q112 150 164 130" stroke="#e33b3b" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="112" cy="146" r="7" fill="#f2c230"/>`,
+   face:`<ellipse transform="rotate(25 30 74)" cx="30" cy="74" rx="18" ry="38" fill="#c98a4b"/><ellipse transform="rotate(-25 166 74)" cx="166" cy="74" rx="18" ry="38" fill="#c98a4b"/><ellipse cx="114" cy="98" rx="20" ry="16" fill="#e0b07a"/>`},
+  {id:"tanuki", name:"たぬき", r:"N", bg:"#f3ead8",
+   desc:"おまけのシール！ たぬきは、頭に葉っぱをのせて化けるといわれて、むかし話によく出てくるよ。",
+   eyeColor:"#1a1a1a", body:cloth("#9a7a55")+`<ellipse cx="112" cy="152" rx="32" ry="20" fill="#e8d8b8"/>`, legs:"#6b5640",
+   face:`<ellipse cx="76" cy="104" rx="16" ry="12" fill="#8a6a4a"/><ellipse cx="112" cy="105" rx="16" ry="12" fill="#8a6a4a"/>`,
+   top:`<circle cx="44" cy="30" r="16" fill="#8a6a4a"/><circle cx="152" cy="30" r="16" fill="#8a6a4a"/><path d="M98 22 Q78 2 98 -24 Q118 2 98 22Z" fill="#5fae4a" stroke="#3f8a34" stroke-width="2"/><path d="M98 20 V-16" stroke="#3f8a34" stroke-width="2"/>`},
+  {id:"akechi", name:"あけちみつひで", r:"R", bg:"#e2efff",
+   desc:"明智光秀は織田信長の家来。1582年、京都の本能寺で信長をおそった「本能寺の変」で知られているよ。家紋は「ききょう」の花。",
+   body:cloth("#6f9fd6")+`<g transform="translate(150 150)">${[0,72,144,216,288].map(a=>`<ellipse transform="rotate(${a})" cx="0" cy="-7" rx="5" ry="8" fill="#fff"/>`).join("")}<circle r="3" fill="#6f9fd6"/></g>`, legs:"#3e5f8a",
+   top:`<path d="M26 50 Q98 -30 170 50 Q98 34 26 50Z" fill="#3a3a4a"/><path d="M84 18 L98 -18 L112 18Z" fill="#c99a14"/>`},
+  {id:"mitsunari", name:"いしだみつなり", r:"R", bg:"#f1ecdc",
+   desc:"石田三成は豊臣秀吉の家来。1600年の関ヶ原の戦いでは、西軍の中心になって、徳川家康の東軍とたたかったよ。",
+   body:cloth("#8a3a3a"), legs:"#5a2a2a",
+   top:`<path d="M28 48 Q98 -14 168 48 Q98 32 28 48Z" fill="#2b2b2b"/><rect x="48" y="-2" width="4" height="60" fill="#6b4a2b"/><rect x="14" y="0" width="34" height="50" fill="#fff" stroke="#333" stroke-width="2"/><text x="31" y="22" font-size="17" font-weight="bold" text-anchor="middle" fill="#222">大一</text><text x="31" y="42" font-size="17" font-weight="bold" text-anchor="middle" fill="#222">大吉</text>`},
+  {id:"masamune", name:"だてまさむね", r:"R", bg:"#e6e6f2",
+   desc:"伊達政宗は仙台藩（宮城県）の大名。三日月のかざりのかぶとが有名で、家来の支倉常長をヨーロッパに送ったよ。",
+   body:cloth("#2b2b3a")+`<path d="M70 134 H154" stroke="#c99a14" stroke-width="4"/>`, legs:"#1f1f2a",
+   top:`<path d="M30 46 Q98 -10 166 46 Q98 30 30 46Z" fill="#2b2b2b"/><path d="M22 14 Q98 -68 174 14 Q98 -36 22 14Z" fill="#f2c230" stroke="#c99a14" stroke-width="2"/><path d="M100 98 L36 72 M120 98 L176 76" stroke="#222" stroke-width="3"/><ellipse cx="110" cy="104" rx="11" ry="9" fill="#222"/>`},
+  {id:"ooku", name:"おおおくのひと", r:"R", bg:"#f6e6ff", eyes:"happy",
+   desc:"大奥は江戸城の中にあった、将軍の妻や、そこで働く女の人たちがくらす場所。男の人はかんたんに入れなかったんだ。",
+   body:cloth("#9b5fc0")+DOTS([[80,138,5],[104,156,5],[134,140,5],[150,162,5]],"#ffd6f0"), legs:"#6e3f8e",
+   top:`<path d="M24 62 Q18 -6 98 -4 Q178 -6 172 62 Q150 22 98 24 Q46 22 24 62Z" fill="#2b2b2b"/><ellipse cx="98" cy="-14" rx="32" ry="18" fill="#2b2b2b"/><path d="M58 -6 L30 -26 M138 -6 L166 -26" stroke="#e0b020" stroke-width="4" stroke-linecap="round"/><circle cx="28" cy="-28" r="6" fill="#ff7ab0"/><circle cx="168" cy="-28" r="6" fill="#ff7ab0"/>`},
+  {id:"fujin", name:"ふうじんらいじん", r:"SR", bg:"#fff0b8", eyes:"happy",
+   desc:"「風神雷神図屏風」は、江戸時代のはじめに俵屋宗達がえがいた絵。風の神さまとかみなりの神さまが、空をかけているよ。",
+   back:`<path d="M8 70 Q0 -20 98 -30 Q196 -20 188 70" stroke="#e06a3a" stroke-width="6" fill="none"/>${[[10,40],[28,-4],[62,-26],[134,-26],[168,-4],[186,40]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11" fill="#f2a03a" stroke="#c0541f" stroke-width="2.5"/><circle cx="${x}" cy="${y}" r="4" fill="#c0541f"/>`).join("")}`,
+   body:cloth("#4caf7a")+`<path d="M54 150 Q100 120 170 150" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/>`, legs:"#3a8a5e",
+   top:`<path d="M70 20 L64 -6 L80 14Z M126 20 L132 -6 L116 14Z" fill="#f2c230" stroke="#c99a14" stroke-width="2"/><path d="M92 -8 L104 -8 L96 6 L108 6 L90 30 L96 12 L86 12Z" fill="#ffe14a" stroke="#d9a400" stroke-width="2"/>`},
+  {id:"ryu", name:"りゅう", r:"SR", bg:"#dcf5e6",
+   desc:"日光東照宮は、徳川家康をまつる神社。3代将軍家光のときに、りゅうなどのきらびやかな彫刻でかざられた建物に建てかえられたよ。",
+   back:Array.from({length:9},(_,i)=>{const a=Math.PI*(1.12+i*0.095),b=a+0.05,c=a-0.05,P=(t,k)=>`${(98+Math.cos(t)*82*k).toFixed(1)} ${(86+Math.sin(t)*72*k).toFixed(1)}`;return `<path d="M${P(c,0.95)} L${P(a,1.24)} L${P(b,0.95)}Z" fill="#3fa06a"/>`;}).join(""),
+   body:cloth("#3fa06a")+DOTS([[80,136,6],[100,150,6],[124,138,6],[146,152,6],[96,166,5],[130,166,5]],"#7fd09a"), legs:"#2f7f52",
+   top:`<path d="M62 30 L46 -14 M54 8 L34 0 M134 30 L150 -14 M142 8 L162 0" stroke="#e0b020" stroke-width="7" stroke-linecap="round"/><path d="M82 118 Q44 110 12 128 M108 118 Q150 110 184 128" stroke="#3fa06a" stroke-width="3" fill="none" stroke-linecap="round"/>`},
 ];
 
 function stickerSVG(st){
@@ -1159,6 +1243,7 @@ function renderHome(){
         <div class="node-stars">${st?"★".repeat(st)+"☆".repeat(3-st):""}</div>
       </div>`;
     }
+    html += examNodeHTML(ch);
     html += `</div></section>`;
   }
   html += `<p class="small-note">クリアしたステージも、何回でも遊べるよ。黄色いリングが満タンになるまでがんばろう！</p>`;
@@ -1554,7 +1639,7 @@ function judge(ok, userText="", opt={}){
     const m = Math.min(MASTER, Q.prev.m + 1);
     save.mastery[q.id] = m;
     justLearned = m===MASTER && Q.prev.m<MASTER;
-    if(justLearned){ Q.learned.push(q); Q.newManga = addMangaPoint(); }
+    if(justLearned){ Q.learned.push(q); Q.newManga = addMangaPoint(); Q.newExam = examReady(+q.id.split("-")[0]); }
   }else{
     save.mastery[q.id] = 0;
     save.wrong[q.id] = true;
@@ -1574,7 +1659,7 @@ function judge(ok, userText="", opt={}){
     const line = justLearned ? "おぼえたね！すごい！" : Q.combo>=3 ? `${Q.combo}もん連続！すごすぎる！` : pick(LINES.correct);
     speak(line);
     showFeedback("good", `<div class="fb-title">⭕ ${line}</div>
-      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}</div>`:meterHTML(save.mastery[q.id])}
+      ${justLearned?`<div class="mastered-badge">🎉「${esc(q.a)}」をおぼえた！${Q.newManga?"<br>📚 新しいマンガが読めるよ！":""}${Q.newExam?"<br>📝 本番テストが出てきたよ！":""}</div>`:meterHTML(save.mastery[q.id])}
       ${userText && opt.hand ? `<div class="fb-exp">よみとった字：「${esc(userText)}」</div>`:""}
       <div class="fb-exp">${esc(q.e||"")}</div>
       <button class="btn wide" onclick="afterAnswer()">つぎへ</button>`);
@@ -2089,6 +2174,73 @@ const MANGA = [
   {s:BG("#fff3d6","#f1dfb4")+ONIGIRI(150,170,1.4)+M(240,"chef",{w:110,mood:"happy"})+M(10,"chonin",{w:90,mood:"wow"})+SWEAT(100,110),
    b:[[2,4,50,"…そういう意味じゃ ないよ"],[60,30,38,"おいしいよ？"]]}],
   note:"大阪は商業の中心で「{天下の台所|てんかのだいどころ}」。江戸は「{将軍|しょうぐん}のおひざもと」、京都は朝廷がある文化の中心。この3つを{三都|さんと}というよ。"},
+ // ---- ここから追加の6話（各章2話ずつ）----
+ {ch:29, title:"鉄砲がやってきた", p:[
+  {cap:"1543年 {種子島|たねがしま}", s:BG("#cdeeff","#7fc4ea")+SEA+SHIP(250,160)+M(30,"nanban",{w:130,ground:250}),
+   b:[[34,4,64,"これが 鉄砲です。遠くまで たまが とどきますよ"]]},
+  {s:BG("#ffe8d6","#d9c79a")+M(20,"kajiya")+M(250,"teppo",{w:120,flip:1,mood:"happy"}),
+   b:[[2,4,52,"{堺|さかい}や {国友|くにとも}で、たくさん 作るぞ！"],[60,4,38,"ぼくらの 出番だ"]]},
+  {cap:"{長篠|ながしの}の戦い", s:BG("#ffe6cc","#c9b27a")+M(40,"teppo",{mood:"wow"})+MARK(210,140,"ドーン！","#e33",44),
+   b:[[2,4,56,"鉄砲を 打ってみたら…"]]},
+  {s:BG("#ffe6cc","#c9b27a")+M(60,"",{w:160,fluffy:1,mood:"wow"})+SPARK(40,60)+M(270,"kajiya",{w:100,flip:1,mood:"happy"}),
+   b:[[2,4,52,"音に びっくりして 毛が ふくらんだ…"],[62,30,36,"あはは！"]]}],
+  note:"{鉄砲|てっぽう}：1543年、{種子島|たねがしま}に流れ着いたポルトガル人が伝えたよ。{堺|さかい}などで大量に作られ、{織田信長|おだのぶなが}は{長篠|ながしの}の戦いで鉄砲をうまく使ったんだ。"},
+
+ {ch:29, title:"太閤検地で はかってみた", p:[
+  {cap:"{豊臣秀吉|とよとみひでよし}の命令で…", s:BG("#dff0ff","#e8c95a",190)+FIELD+M(230,"hideyoshi"),
+   b:[[2,4,56,"全国の 田畑を はかって、とれる 米の量を 調べるのじゃ！"]]},
+  {s:BG("#dff0ff","#e8c95a",190)+FIELD+`<path d="M40 236 H360" stroke="#c0392b" stroke-width="5" stroke-dasharray="12 6"/>`+M(20,"samurai",{w:110})+M(270,"hyakusho",{w:110,flip:1}),
+   b:[[2,4,46,"ものさしや ますも そろえるぞ"],[54,4,44,"これが {太閤検地|たいこうけんち}かあ"]]},
+  {s:BG("#fff6d6","#e2d2a8")+`<rect x="300" y="50" width="18" height="180" fill="#f2d48a" stroke="#a8843e" stroke-width="2"/>${[0,1,2,3,4,5,6,7,8].map(i=>`<path d="M300 ${60+i*20} h9" stroke="#a8843e" stroke-width="2"/>`).join("")}`+M(120,"",{mood:"happy"})+NOTE(90,100),
+   b:[[2,4,56,"ついでに わたしも はかってもらおう♪"]]},
+  {s:BG("#fff6d6","#e2d2a8")+M(80,"",{w:170,fluffy:1,mood:"sad"})+SWEAT(250,110)+M(290,"samurai",{w:90,flip:1,mood:"wow"})+MARK(350,110,"？","#3a9ad9"),
+   b:[[52,4,46,"たても よこも 同じ長さ…！？"],[2,4,40,"まんまる です…"]]}],
+  note:"{太閤検地|たいこうけんち}：秀吉が全国の田畑の広さや土地のよしあしを調べ、とれる米の量（{石高|こくだか}）で表したよ。耕す百姓の名前も{検地帳|けんちちょう}に書かれたんだ。"},
+
+ {ch:30, title:"外様は とおくへ", p:[
+  {cap:"大名は 3種類", s:BG("#e6f3ff","#d9c79a")+CASTLE(250,80)+M(40,"ieyasu"),
+   b:[[2,4,64,"{親藩|しんぱん}・{譜代|ふだい}・{外様|とざま}に 分けて 配置するぞ"]]},
+  {s:BG("#e6f3ff","#d9c79a")+M(20,"daimyo",{w:120,mood:"happy"})+M(250,"masamune",{w:120,flip:1,mood:"sad"}),
+   b:[[2,4,46,"{譜代|ふだい}は 江戸の 近く！"],[52,4,46,"{外様|とざま}の わしは 遠くか…"]]},
+  {s:BG("#fff3d6","#f1dfb4")+M(40,"",{mood:"happy"})+DISH(230,240)+MOCHI(216,230)+DISH(350,180)+`<circle cx="350" cy="172" r="10" fill="#6b8e3a"/>`,
+   b:[[2,4,60,"好きな おやつは 近くに、にがてな おやつは 遠くに…"]]},
+  {s:BG("#fff3d6","#f1dfb4")+M(40,"",{w:160,fluffy:1,mood:"happy"})+DISH(230,240)+DISH(350,180)+`<circle cx="350" cy="172" r="10" fill="#6b8e3a"/>`+M(280,"masamune",{w:100,flip:1,mood:"wow"}),
+   b:[[2,4,50,"近くのは ぜんぶ 食べちゃった♪"],[56,30,42,"遠くのも 食べなさい！"]]}],
+  note:"{親藩|しんぱん}は徳川家の親せき、{譜代|ふだい}は{関ヶ原|せきがはら}の戦いの前からの家来、{外様|とざま}は関ヶ原のあとに従った大名。幕府は外様大名を、江戸から遠いところに置いたよ。"},
+
+ {ch:30, title:"五人組で がんばろう", p:[
+  {cap:"村では…", s:BG("#dff0ff","#a8d08a")+MOUNT+M(230,"hyakusho"),
+   b:[[2,4,56,"{百姓|ひゃくしょう}は 5けんずつ「{五人組|ごにんぐみ}」を つくるんだって"]]},
+  {s:BG("#dff0ff","#a8d08a")+M(0,"hyakusho",{w:100})+M(100,"hyakusho",{w:100,mood:"sad"})+M(200,"hyakusho",{w:100,flip:1})+M(300,"hyakusho",{w:100,flip:1,mood:"sad"}),
+   b:[[2,4,90,"{年貢|ねんぐ}が おさめられないと、組の みんなの 責任に なるんだ…"]]},
+  {cap:"そして 教室で…", s:BG("#fdf6e3","#e9d6a8")+BOARD+M(40,"",{mood:"happy"})+M(250,"chonin",{w:100,flip:1,mood:"wow"}),
+   b:[[2,4,56,"宿題も 五人組！ 1人でも わすれたら みんなで やりなおし！"]]},
+  {s:BG("#fdf6e3","#e9d6a8")+BOARD+M(30,"",{mood:"sad"})+SWEAT(160,110)+M(220,"chonin",{w:90,flip:1,mood:"happy"})+M(300,"terakoya",{w:90,flip:1,mood:"happy"}),
+   b:[[2,4,50,"あっ… 先生の プリント わすれた"],[58,4,40,"やりなおしー！"]]}],
+  note:"{五人組|ごにんぐみ}：百姓などを5けんほどの組にして、年貢を納めることや犯罪をふせぐことに、たがいに責任を持たせたしくみだよ。"},
+
+ {ch:31, title:"朱印船で いこう", p:[
+  {cap:"江戸時代の はじめ", s:BG("#cdeeff","#7fc4ea")+SEA+SHIP(250,160)+M(30,"ieyasu",{w:130,ground:250}),
+   b:[[34,4,64,"{朱印状|しゅいんじょう}を 持った船なら、海外に 行ってよいぞ"]]},
+  {s:BG("#cdeeff","#7fc4ea")+SEA+SHIP(30,150)+M(220,"funanori",{w:130,mood:"happy"}),
+   b:[[30,4,68,"東南アジアに 着いた！ 日本人の 町「{日本町|にほんまち}」が あるよ"]]},
+  {s:BG("#fff3d6","#f1dfb4")+STALL(230,"#5cbf2a")+M(60,"",{mood:"happy"})+NOTE(40,100)+NOTE(200,80),
+   b:[[2,4,56,"わたしも 日本町で お店を 開こう♪"]]},
+  {cap:"でも そのあと…", s:BG("#cdeeff","#7fc4ea")+SEA+SHIP(240,150)+M(30,"",{mood:"wow"})+SWEAT(150,110)+M(270,"funanori",{w:100,ground:200,flip:1}),
+   b:[[2,4,52,"{鎖国|さこく}で 帰って これなく なるの！？"],[60,4,38,"いそいで 帰るぞー！"]]}],
+  note:"{朱印船貿易|しゅいんせんぼうえき}：{徳川家康|とくがわいえやす}が海外へ行く許可状（{朱印状|しゅいんじょう}）を出し、東南アジアとの貿易がさかんになって、各地に{日本町|にほんまち}ができたよ。でも{鎖国|さこく}で、日本人の海外への行き来は禁止されたんだ。"},
+
+ {ch:31, title:"通信使が やってきた", p:[
+  {cap:"将軍が かわると…", s:BG("#e6f3ff","#a8d08a")+ROAD+PINE(360)+M(190,"tsushinshi"),
+   b:[[2,4,48,"{朝鮮|ちょうせん}から {通信使|つうしんし}が やってきました"]]},
+  {s:BG("#e6f3ff","#a8d08a")+ROAD+M(0,"chonin",{w:100,mood:"wow"})+M(140,"tsushinshi",{w:115})+M(290,"hyakusho",{w:100,flip:1,mood:"wow"}),
+   b:[[2,4,40,"すごい 行列！"],[62,4,36,"見に行こう！"]]},
+  {s:BG("#fdf6e3","#e9d6a8")+SCROLL(250,110)+M(40,"",{mood:"happy"}),
+   b:[[2,4,58,"字を 書いて もらえませんか？"]]},
+  {s:BG("#fdf6e3","#e9d6a8")+SCROLL(165,90)+`<text x="200" y="158" font-size="44" font-weight="bold" text-anchor="middle" fill="#222">友</text>`+M(10,"",{w:130,mood:"happy"})+M(260,"tsushinshi",{w:120,flip:1,mood:"happy"})+SPARK(170,70)+SPARK(250,80),
+   b:[[2,4,50,"「友」って 書いて くれた！"],[58,4,40,"なかよく しましょう"]]}],
+  note:"{朝鮮通信使|ちょうせんつうしんし}：将軍の代がわりなどのときに、朝鮮から江戸へ来た使節だよ。{対馬藩|つしまはん}が朝鮮との窓口になり、通信使は通る町々で大かんげいされたんだ。"},
+
 ];
 
 // ---- ゲージ ----
@@ -2267,17 +2419,18 @@ CQ.forEach((q,i)=>q.id = i);
    ========================================================= */
 // 建物：x,y = 島の上の位置(%) / cost = 建てる💎（レベル2は1.5倍） / who = 来やすくなるキャラ / info = 豆知識
 const BUILDINGS = [
- {id:"ichi",     name:"楽市の市場",   x:14, y:52, cost:150, who:["chonin","chef","neko","usagi"],               info:"織田信長は楽市・楽座で、だれでも自由に商売できるようにしたよ。"},
- {id:"kaji",     name:"鉄砲かじ屋",   x:34, y:30, cost:200, who:["teppo","ashigaru","nanban","samurai"],         info:"鉄砲は1543年に種子島に伝わり、堺などで大量につくられたよ。"},
- {id:"chashitsu",name:"茶室",         x:56, y:24, cost:250, who:["rikyu","hime","okuni","kabuki"],               info:"千利休は、茶の湯を茶道として大成したよ。"},
- {id:"tenshu",   name:"天守閣",       x:46, y:46, cost:400, who:["castle","shachi","nobunaga","hideyoshi","daimyo","shogun","ieyasu"], info:"高くそびえる天守閣は、大名の力を示すために建てられたよ。"},
- {id:"kura",     name:"蔵屋敷",       x:73, y:38, cost:250, who:["ryogae","chonin","daiku","ougon"],             info:"大名は大阪などに蔵屋敷を置いて、年貢米や特産物を売りさばいたよ。"},
+ {id:"ichi",     name:"楽市の市場",   x:14, y:52, cost:150, who:["chonin","chef","neko","usagi","furiuri"],               info:"織田信長は楽市・楽座で、だれでも自由に商売できるようにしたよ。"},
+ {id:"kaji",     name:"鉄砲かじ屋",   x:34, y:30, cost:200, who:["teppo","ashigaru","nanban","samurai","kajiya","akechi"],         info:"鉄砲は1543年に種子島に伝わり、堺などで大量につくられたよ。"},
+ {id:"chashitsu",name:"茶室",         x:56, y:24, cost:250, who:["rikyu","hime","okuni","kabuki","fujin"],               info:"千利休は、茶の湯を茶道として大成したよ。"},
+ {id:"tenshu",   name:"天守閣",       x:46, y:46, cost:400, who:["castle","shachi","nobunaga","hideyoshi","daimyo","shogun","ieyasu","mitsunari","masamune","ooku","ryu"], info:"高くそびえる天守閣は、大名の力を示すために建てられたよ。"},
+ {id:"kura",     name:"蔵屋敷",       x:73, y:38, cost:250, who:["ryogae","chonin","daiku","ougon","funanori"],             info:"大名は大阪などに蔵屋敷を置いて、年貢米や特産物を売りさばいたよ。"},
  {id:"dejima",   name:"出島",         x:84, y:66, cost:300, who:["dutch","missionary","nanban","amakusa","panda","astronaut"], info:"鎖国中、オランダとは長崎の出島で貿易したよ。"},
- {id:"terakoya", name:"寺子屋",       x:26, y:70, cost:200, who:["terakoya","eshi","wizard","obake"],            info:"寺子屋では、子どもたちが読み・書き・そろばんを習ったよ。"},
- {id:"shukuba",  name:"宿場",         x:50, y:72, cost:250, who:["hikyaku","ninja","tsushinshi","ryukyu","hikeshi"], info:"五街道には宿場がおかれ、大名や旅人がとまったよ。"},
- {id:"shinden",  name:"新田",         x:70, y:58, cost:150, who:["hyakusho","hiyoko","sumo"],                    info:"江戸時代には新田開発が進み、米のとれ高がふえたよ。"},
+ {id:"terakoya", name:"寺子屋",       x:26, y:70, cost:200, who:["terakoya","eshi","wizard","obake","tanuki"],            info:"寺子屋では、子どもたちが読み・書き・そろばんを習ったよ。"},
+ {id:"shukuba",  name:"宿場",         x:50, y:72, cost:250, who:["hikyaku","ninja","tsushinshi","ryukyu","hikeshi","inu"], info:"五街道には宿場がおかれ、大名や旅人がとまったよ。"},
+ {id:"shinden",  name:"新田",         x:70, y:58, cost:150, who:["hyakusho","hiyoko","sumo","ryoshi"],                    info:"江戸時代には新田開発が進み、米のとれ高がふえたよ。"},
 ];
-const CHALLENGE_COST = 50;
+const CHALLENGE_COST = {N:50, R:120, SR:300}; // レア度ごとの勝負の値段
+const cqCost = id => CHALLENGE_COST[(STICKERS.find(s=>s.id===id)||{}).r] || 50;
 const lvCost = b => Math.round(b.cost * 1.5 / 10) * 10;
 const isl = () => save.island;
 const bLv = id => isl().b[id] || 0;
@@ -2376,7 +2529,7 @@ function islandHelp(){
     <div class="bubble" style="text-align:left;line-height:1.8">
     🔨 <b>空き地</b>をタップすると、💎で歴史の建物が建てられるよ。もう一度💎を使うとレベル2！<br>
     🧑‍🤝‍🧑 ガチャやチャレンジで集めたシールのキャラが、島でくらしているよ。タップするとお話してくれるよ。<br>
-    ❗ <b>！</b>がついたキャラは、まだ仲間じゃないチャレンジャー。💎${CHALLENGE_COST}で勝負して、テストに出る問題に<b>3問とも正解</b>すると、シールがもらえて仲間になるよ！<br>
+    ❗ <b>！</b>がついたキャラは、まだ仲間じゃないチャレンジャー。💎（ふつう50・レア120・スーパーレア300）で勝負して、テストに出る問題に<b>3問とも正解</b>すると、シールがもらえて仲間になるよ！<br>
     🏯 建物に関係のあるキャラが、島に来やすくなるよ。<br>
     📖 問題は、ステージを1つ以上クリアした回から出るよ。</div>
     <button class="btn gray wide" onclick="closeModal()">とじる</button>`);
@@ -2445,7 +2598,8 @@ let CH = null; // {st, qs, i, timer, hintUsed}
 function tapVisitor(id){
   const st = STICKERS.find(s=>s.id===id);
   const pool = cqPool();
-  const can = save.xp >= CHALLENGE_COST && pool.length >= 3;
+  const cost = cqCost(id);
+  const can = save.xp >= cost && pool.length >= 3;
   const rule = st.r==="SR" ? "⏱️ 1問20秒の制限時間つき！" : st.r==="R" ? "ヒントなしで勝負！" : "💡 1問に1回、ヒントが使えるよ";
   showModal(`<div style="text-align:center">
     ${stickerHTML(st, false, "big-stk")}
@@ -2453,7 +2607,7 @@ function tapVisitor(id){
     <div class="rv-rar">${RARITY[st.r].stars} ${RARITY[st.r].name}</div>
     <div class="bubble" style="text-align:left;margin:10px 0">「わたしの問題に <b>3問とも正解</b> できたら、仲間になってあげる！」<br><small>${rule}</small></div>
     ${pool.length<3?`<div class="small-note" style="color:#e33">まずはステージを1つクリアしてね。クリアした回の問題が出るよ</div>`:""}
-    <button class="btn red wide ${can?"shine":""}" ${can?"":"disabled"} onclick="startChallenge('${id}')">⚔️ 勝負する（💎${CHALLENGE_COST}）${save.xp<CHALLENGE_COST?`<br><small>あと💎${CHALLENGE_COST-save.xp}</small>`:""}</button>
+    <button class="btn red wide ${can?"shine":""}" ${can?"":"disabled"} onclick="startChallenge('${id}')">⚔️ 勝負する（💎${cost}）${save.xp<cost?`<br><small>あと💎${cost-save.xp}</small>`:""}</button>
     <div class="row"><button class="btn gray wide" onclick="closeModal()">またこんど</button></div></div>`);
   speak(`${st.name}があらわれた！3問とも正解できたら、仲間になってあげる！`);
 }
@@ -2462,8 +2616,9 @@ function pickCQ(n){
   return cqPool().map(q=>({q, k:(seen[q.id]||0) + Math.random()*1.5})).sort((a,b)=>a.k-b.k).slice(0,n).map(x=>x.q);
 }
 function startChallenge(id){
-  if(save.xp < CHALLENGE_COST || cqPool().length < 3) return;
-  save.xp -= CHALLENGE_COST;
+  const cost = cqCost(id);
+  if(save.xp < cost || cqPool().length < 3) return;
+  save.xp -= cost;
   const qs = pickCQ(3);
   qs.forEach(q=>{ isl().cq[q.id] = (isl().cq[q.id]||0) + 1; });
   persist();
@@ -2557,7 +2712,8 @@ function cqWin(){
 }
 function cqLose(){
   const st = CH.st;
-  const can = save.xp >= CHALLENGE_COST;
+  const cost = cqCost(st.id);
+  const can = save.xp >= cost;
   document.getElementById("challenge").innerHTML = `
     <div class="cq-result">
       <h1>ざんねん…</h1>
@@ -2565,7 +2721,7 @@ function cqLose(){
       <div class="bubble" style="text-align:left">${st.name}「また挑戦してね！ 島で待ってるよ」<br><small>まちがえた問題の説明を読んで、もう一回チャレンジしよう。問題は入れかわるよ</small></div>
       <div class="row" style="margin-top:16px">
         <button class="btn gray" onclick="openIsland()">🏝️ 島へもどる</button>
-        <button class="btn red" ${can?"":"disabled"} onclick="startChallenge('${st.id}')">⚔️ もう一回（💎${CHALLENGE_COST}）</button>
+        <button class="btn red" ${can?"":"disabled"} onclick="startChallenge('${st.id}')">⚔️ もう一回（💎${cost}）</button>
       </div>
     </div>`;
   SFX.fail(); speak(`${st.name}、また挑戦してね！`);
@@ -2574,6 +2730,162 @@ function quitChallenge(){
   if(!confirm("勝負をやめる？（💎はもどらないよ）")) return;
   clearInterval(CH.timer);
   openIsland();
+}
+
+/* =========================================================
+   本番テスト（章の問題をぜんぶ「おぼえた」にすると出てくる）
+   20問 × 5点 = 100点満点 ・ 制限時間10分
+   答えている間は正解かどうか出さない（本物のテストと同じ）
+   ========================================================= */
+const EXAM_N = 20, EXAM_CQ = 6, EXAM_SEC = 600;
+const chapterQs  = ch => ch.stages.flatMap(s=>s.qs);
+const examReady  = chId => chapterQs(CHAPTERS.find(c=>c.id===chId)).every(isMastered);
+const examRec    = chId => (save.exam = save.exam || {})[chId] || {best:null, tries:0, got100:false};
+let EX = null; // {ch, items:[{q, opts, ans, kind}], i, end, timer}
+
+function examNodeHTML(ch){
+  const pool = chapterQs(ch), m = pool.filter(isMastered).length;
+  const ok = m === pool.length, rec = examRec(ch.id);
+  return `<div class="node-wrap">
+    <div class="ring boss exam" style="--p:${Math.round(m/pool.length*100)}">
+      <button class="node boss exam ${ok?"":"locked"} ${ok&&rec.best===null?"next":""}" onclick="tapExam(${ch.id})">
+        ${ok&&rec.best===null?`<span class="start-tag">NEW！</span>`:""}${ok?"📝":"🔒"}
+      </button>
+    </div>
+    <div class="node-label">📝 本番テスト</div>
+    <div class="node-sub">${ok?(rec.best===null?"100点満点・10分":`ベスト ${rec.best}点${rec.best===100?" 💮":""}`):`おぼえた ${m}/${pool.length}`}</div>
+  </div>`;
+}
+function tapExam(chId){
+  const ch = CHAPTERS.find(c=>c.id===chId);
+  const pool = chapterQs(ch), left = pool.filter(q=>!isMastered(q)).length;
+  if(left){
+    teacherMood(null,"shake");
+    document.getElementById("greet").textContent = `この回の問題をぜんぶ「おぼえた！」にすると、本番テストが出てくるよ。あと${left}問！`;
+    return;
+  }
+  const rec = examRec(chId);
+  showModal(`<div style="text-align:center">
+    <h2>📝 本番テスト</h2>
+    <div style="color:${ch.color};font-weight:bold">第${ch.id}回 ${ch.title}</div>
+    <div class="ex-rules">
+      <div>📄 <b>${EXAM_N}問</b>（1問5点）で <b>100点満点</b></div>
+      <div>⏱️ 制限時間は <b>${EXAM_SEC/60}分</b>。時間になると自動で提出</div>
+      <div>🤫 答えの正解・まちがいは、<b>提出するまでわからない</b>よ</div>
+      <div>🔁 前の問題にもどって、答えを直してもOK</div>
+      <div>💎 点数の半分の💎がもらえる。はじめての100点でチケット1枚！</div>
+    </div>
+    ${rec.best!==null?`<div class="small-note">これまでのベスト：<b>${rec.best}点</b>（${rec.tries}回受けた）</div>`:""}
+    <button class="btn red wide shine" onclick="startExam(${chId})">はじめ！</button>
+    <div class="row"><button class="btn gray wide" onclick="closeModal()">またこんど</button></div></div>`);
+  speak("本番テストだよ。20問で100点満点。制限時間は10分。がんばってね！");
+}
+function startExam(chId){
+  const ch = CHAPTERS.find(c=>c.id===chId);
+  const basic = shuffle([...chapterQs(ch)]).slice(0, EXAM_N-EXAM_CQ)
+    .map(q=>({q:q.q, a:q.a, e:q.e, kind:"一問一答", opts:shuffle([q.a, ...q.d.slice(0,3)])}));
+  const test = shuffle(CQ.filter(q=>q.ch===chId)).slice(0, EXAM_CQ)
+    .map(q=>({q:q.q, a:q.a, e:q.e, kind:q.k, opts:shuffle([q.a, ...q.d])}));
+  EX = {ch, items:[...basic, ...test], ans:Array(EXAM_N).fill(null), i:0, end:Date.now()+EXAM_SEC*1000, timer:null};
+  closeModal();
+  show("exam");
+  SFX.ratchet();
+  EX.timer = setInterval(examTick, 250);
+  renderExam();
+}
+function examTick(){
+  if(!EX) return;
+  const left = Math.max(0, Math.ceil((EX.end - Date.now())/1000));
+  const t = document.getElementById("exTime");
+  if(t){
+    t.textContent = `⏱️ ${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;
+    t.classList.toggle("hurry", left <= 60);
+  }
+  const bar = document.getElementById("exBar"); if(bar) bar.style.width = (left/EXAM_SEC*100)+"%";
+  if(left <= 0){ clearInterval(EX.timer); SFX.thud(); alert("時間になりました！ 答案を集めます"); gradeExam(); }
+}
+function renderExam(){
+  const {ch, items, ans, i} = EX, it = items[i];
+  const done = ans.filter(a=>a!==null).length;
+  document.getElementById("exam").innerHTML = `
+    <div class="quiz-top"><button class="quit" onclick="quitExam()">✕</button>
+      <div class="g-title">📝 第${ch.id}回 本番テスト</div>
+      <div class="stat ex-time" id="exTime"></div></div>
+    <div class="cq-time"><div id="exBar"></div></div>
+    <div class="ex-nums">${items.map((_,k)=>`<button class="${k===i?"now":""} ${ans[k]!==null?"done":""}" data-silent="1" onclick="EX.i=${k};renderExam()">${k+1}</button>`).join("")}</div>
+    <div class="ex-paper">
+      <div class="ex-head"><span class="cq-kind" style="background:${ch.color}">${i<EXAM_N-EXAM_CQ?"一問一答":"テスト問題・"+it.kind}</span><span class="ex-pt">5点</span>
+        <button class="ex-say" data-silent="1" onclick="speak(spoken(EX.items[EX.i].q), true)">🔊</button></div>
+      <div class="cq-q"><b>問${i+1}.</b> ${ruby(it.q)}</div>
+      <div class="cq-choices">${it.opts.map((o,k)=>`<button class="choice cq-choice ex-choice ${ans[i]===o?"picked":""}" data-silent="1" onclick="pickExam(${k})"><span class="ex-mark">${"アイウエ"[k]}</span>${esc(o)}</button>`).join("")}</div>
+    </div>
+    <div class="row ex-nav">
+      <button class="btn gray" ${i===0?"disabled":""} onclick="EX.i--;renderExam()">◀ まえ</button>
+      ${i<EXAM_N-1?`<button class="btn blue" onclick="EX.i++;renderExam()">つぎ ▶</button>`:""}
+    </div>
+    <div class="row"><button class="btn red wide ${done===EXAM_N?"shine":""}" onclick="submitExam()">✏️ 提出する（${done}/${EXAM_N}問 答えた）</button></div>`;
+  examTick();
+}
+function pickExam(k){
+  const it = EX.items[EX.i];
+  EX.ans[EX.i] = it.opts[k];
+  SFX.pop();
+  // 答えたら自動でつぎの問題へ（最後の問題ならそのまま）
+  if(EX.i < EXAM_N-1){ renderExam(); setTimeout(()=>{ if(EX){ EX.i++; renderExam(); } }, 250); }
+  else renderExam();
+}
+function submitExam(){
+  const left = EX.ans.filter(a=>a===null).length;
+  if(!confirm(left ? `まだ ${left}問 答えていないよ。提出する？` : "提出する？（もう答えは直せないよ）")) return;
+  clearInterval(EX.timer);
+  gradeExam();
+}
+function quitExam(){
+  if(!confirm("テストをやめる？（点数はつかないよ）")) return;
+  clearInterval(EX.timer);
+  EX = null;
+  goHome();
+}
+function gradeExam(){
+  if(!EX) return;
+  const {ch, items, ans} = EX;
+  EX = null;
+  const res = items.map((it,k)=>({...it, mine:ans[k], ok:ans[k]===it.a}));
+  const score = res.filter(r=>r.ok).length * (100/EXAM_N);
+  const rec = examRec(ch.id);
+  const isBest = rec.best===null || score > rec.best;
+  const first100 = score===100 && !rec.got100;
+  const gem = Math.floor(score/2);
+  save.exam[ch.id] = {best: isBest?score:rec.best, tries:rec.tries+1, got100: rec.got100 || score===100};
+  save.xp += gem;
+  if(first100) save.tickets++;
+  persist();
+  const stamp = score===100 ? ["💮","たいへん よくできました","s100"] : score>=80 ? ["⭐","よくできました","s80"] : score>=60 ? ["👍","もう少し！","s60"] : ["💪","つぎは がんばろう","s0"];
+  document.getElementById("exam").innerHTML = `
+    <div class="quiz-top"><button class="quit" onclick="goHome()">✕</button><div class="g-title">📝 第${ch.id}回 本番テスト けっか</div><div class="stat"></div></div>
+    <div class="ex-result">
+      <div class="ex-score"><span id="exScore">0</span><small>点</small></div>
+      <div class="ex-stamp ${stamp[2]}">${stamp[0]} ${stamp[1]}</div>
+      ${isBest&&rec.best!==null?`<div class="mastered-badge">🏆 ベスト記録こうしん！（前は${rec.best}点）</div>`:""}
+      <div class="ex-reward">💎 +${gem}${first100?"　🎟️ チケット +1（はじめての100点！）":""}</div>
+    </div>
+    <div class="rar-label">答え合わせ（${res.filter(r=>r.ok).length} / ${EXAM_N}問 正解）</div>
+    <div class="ex-review">${res.map((r,k)=>`<div class="ex-row ${r.ok?"ok":"ng"}">
+      <div><b>${r.ok?"⭕":"❌"} 問${k+1}.</b> ${ruby(r.q)}</div>
+      ${r.ok?`<div class="ex-a">こたえ：${esc(r.a)}</div>`:`<div class="ex-a">あなた：${r.mine===null?"（答えなし）":esc(r.mine)}<br>正しいこたえ：<b>${esc(r.a)}</b></div><div class="ex-e">${esc(plain(r.e||""))}</div>`}
+    </div>`).join("")}</div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn gray" onclick="goHome()">ホームへもどる</button>
+      <button class="btn red" onclick="tapExam(${ch.id})">📝 もう一回うける</button>
+    </div>`;
+  window.scrollTo(0,0);
+  // 点数をカウントアップ
+  const el = document.getElementById("exScore"), t0 = Date.now();
+  const up = setInterval(()=>{ const p = Math.min(1,(Date.now()-t0)/1200); el.textContent = Math.round(score*p); if(p>=1) clearInterval(up); }, 40);
+  setTimeout(()=>{
+    if(score===100){ SFX.revealSR(); confetti(); } else if(score>=80){ SFX.revealR(); confetti(); } else if(score>=60) SFX.revealN(); else SFX.fail();
+    speak(`${score}点！ ${stamp[1]}`);
+  }, 1250);
 }
 
 renderHome();
